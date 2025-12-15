@@ -12,6 +12,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Rivo - UAE Real Estate AI Advisor",
   description: "Unbiased AI guidance for UAE property decisions. No commission pressure, just facts.",
+  icons: {
+    icon: '/rivo-icon.png',
+  },
 };
 
 export default function RootLayout({
