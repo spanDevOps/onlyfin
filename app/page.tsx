@@ -141,12 +141,10 @@ export default function Chat() {
     const typed = renderedById[message.id];
     if (typed !== undefined) return typed; // animating or already typed
     
-    // If this is the last message and we're loading OR animatingId is being set up,
-    // return empty to prevent flash
+    // If this is the last message and animation hasn't started yet, return empty to prevent flash
     const isLastMessage = index === messages.length - 1;
-    if (isLastMessage && (isLoading || (message.content && !renderedById.hasOwnProperty(message.id) && finalTextById.current[message.id] === undefined))) {
-      // Still streaming or just finished but animation not started yet
-      return "";
+    if (isLastMessage && !animationStartedFor.current.has(message.id)) {
+      return ""; // Don't show anything until animation starts
     }
     
     return message.content ?? ""; // older assistant messages
