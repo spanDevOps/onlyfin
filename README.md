@@ -1,6 +1,6 @@
 # OnlyFin - AI Financial Assistant
 
-> A finance-focused AI chatbot with document upload, knowledge base search, and intelligent typing animations.
+A finance-focused AI chatbot with polished UI/UX, document upload, and knowledge base search.
 
 ## 🚀 Quick Start
 
