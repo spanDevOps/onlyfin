@@ -1,5 +1,5 @@
 {
-  "name": "anti-calculator",
+  "name": "onlyfin",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,6 +11,8 @@
   "dependencies": {
     "@ai-sdk/mistral": "^1.0.10",
     "@ai-sdk/openai": "^1.0.10",
+    "@dotlottie/react-player": "^1.6.19",
+    "@lottiefiles/dotlottie-react": "^0.17.10",
     "ai": "^4.0.0",
     "next": "14.2.18",
     "react": "^18.3.1",
@@ -20,14 +22,20 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@qdrant/js-client-rest": "^1.11.0",
+    "@types/formidable": "^3.4.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.18",
+    "formidable": "^3.5.4",
+    "mammoth": "^1.11.0",
+    "pdf-parse": "^2.4.5",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tiktoken": "^1.0.22",
     "typescript": "^5"
   }
 }

@@ -1,77 +1,140 @@
 # Deployment Guide
 
-## Option 1: Vercel (Recommended - 5 minutes)
+## Vercel Deployment (Recommended)
+
+### Prerequisites
+
+- GitHub account
+- Vercel account (free)
+- OpenAI API key
+- (Optional) Qdrant Cloud account
 
 ### Step 1: Push to GitHub
+
 ```bash
 git init
 git add .
-git commit -m "Initial commit: AskRivo Anti-Calculator"
+git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/yourusername/anti-calculator.git
+git remote add origin https://github.com/yourusername/onlyfin.git
 git push -u origin main
 ```
 
 ### Step 2: Deploy on Vercel
+
 1. Go to [vercel.com](https://vercel.com)
 2. Click "Add New Project"
 3. Import your GitHub repository
-4. Vercel will auto-detect Next.js
-5. Add Environment Variable:
-   - Key: `OPENAI_API_KEY`
-   - Value: Your OpenAI API key
+4. Vercel auto-detects Next.js
+5. Add environment variables:
+   - `OPENAI_API_KEY` (required)
+   - `OPENAI_MODEL` = `gpt-4.1-nano`
+   - `QDRANT_URL` (optional)
+   - `QDRANT_API_KEY` (optional)
+   - `QDRANT_COLLECTION` = `onlyfinance-kb` (optional)
 6. Click "Deploy"
 
-### Step 3: Get Your Live URL
-- Vercel will provide a URL like: `https://anti-calculator-xyz.vercel.app`
-- Share this URL in your submission
+### Step 3: Verify Deployment
 
-## Option 2: Manual Build Test
+- Vercel provides URL: `https://onlyfin-xyz.vercel.app`
+- Test chat functionality
+- Test document upload (if Qdrant configured)
+- Check for console errors
 
-Test the production build locally:
+## Manual Build Test
+
+Test production build locally:
 
 ```bash
 npm run build
 npm run start
 ```
 
-Then open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000)
 
 ## Environment Variables
 
-Make sure these are set in Vercel:
-
-| Variable | Value | Required |
-|----------|-------|----------|
-| `OPENAI_API_KEY` | Your OpenAI API key | Yes |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | Yes | OpenAI API key |
+| `OPENAI_MODEL` | No | Model name (default: gpt-4.1-nano) |
+| `QDRANT_URL` | No | Qdrant cluster URL |
+| `QDRANT_API_KEY` | No | Qdrant API key |
+| `QDRANT_COLLECTION` | No | Collection name (default: onlyfinance-kb) |
 
 ## Post-Deployment Checklist
 
 - [ ] Chat interface loads
 - [ ] Can send messages
-- [ ] Responses stream in real-time
-- [ ] Tool calls work (check for "Calculated using verified tools" badge)
+- [ ] Responses stream correctly
+- [ ] Typing animation works (no flash)
+- [ ] K-Base sidebar toggles
+- [ ] Document upload works (if Qdrant configured)
 - [ ] No console errors
 - [ ] Mobile responsive
 
 ## Troubleshooting
 
 ### Build Fails
-- Check TypeScript errors: `npm run build`
-- Verify all dependencies installed: `npm install`
+
+```bash
+# Check TypeScript errors
+npm run build
+
+# Check dependencies
+npm install
+```
 
 ### Runtime Errors
+
 - Check Vercel logs in dashboard
-- Verify `OPENAI_API_KEY` is set correctly
+- Verify `OPENAI_API_KEY` is set
 - Check OpenAI API quota/credits
+- Verify Qdrant connection (if using KB)
 
 ### Slow Responses
+
 - Normal for first request (cold start)
 - Subsequent requests should be fast
 - Streaming should show partial responses
 
+### Upload Fails
+
+- Check Qdrant environment variables
+- Verify cluster is running
+- Check file size (< 10MB)
+- View logs for details
+
 ## Performance Tips
 
-- Edge runtime is enabled for fast responses
+- Vercel Edge Network provides global CDN
 - Streaming reduces perceived latency
-- Function calls are deterministic (no LLM delay for math)
+- Qdrant co-located in us-east-1 for low latency
+- Static assets cached automatically
+
+## Monitoring
+
+- **Vercel Dashboard**: View logs, analytics, performance
+- **OpenAI Dashboard**: Monitor token usage, costs
+- **Qdrant Dashboard**: Check storage, queries
+
+## Custom Domain
+
+1. Go to Vercel project settings
+2. Click "Domains"
+3. Add your custom domain
+4. Update DNS records as instructed
+5. SSL certificate auto-provisioned
+
+## Scaling
+
+Vercel free tier includes:
+- Unlimited requests
+- 100GB bandwidth/month
+- Automatic scaling
+- Global CDN
+
+For higher traffic:
+- Upgrade to Vercel Pro ($20/month)
+- Increase OpenAI rate limits
+- Upgrade Qdrant plan if needed

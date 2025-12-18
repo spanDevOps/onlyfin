@@ -1,72 +1,134 @@
-# Quick Setup Guide
+# Setup Guide
 
-## 1. Configure API Keys and Model Selection
+## Prerequisites
 
-Edit `.env.local` and configure your API keys and preferences:
+- Node.js 18+ installed
+- OpenAI API key
+- (Optional) Qdrant Cloud account for document upload
 
-```env
-# OpenAI API key (required)
-OPENAI_API_KEY=sk-proj-...your-actual-key...
+## Installation
 
-# Mistral API key (optional - for backup/alternative)
-MISTRAL_API_KEY=your_mistral_api_key_here
+### 1. Clone & Install
 
-# LLM Provider: 'openai' or 'mistral' (default: openai)
-LLM_PROVIDER=openai
-
-# OpenAI Model: 'gpt-5-mini' (recommended), 'gpt-5.2' (best quality), 'gpt-4.1' (non-reasoning)
-OPENAI_MODEL=gpt-5-mini
+```bash
+git clone <your-repo-url>
+cd onlyfin
+npm install
 ```
 
-### Model Options
+### 2. Configure Environment
 
-**OpenAI Models** (as of December 2025):
-- `gpt-5-mini` - Fast + reliable, best for function calling (recommended by Perplexity)
-- `gpt-5.2` - Latest flagship model, best quality for complex reasoning
-- `gpt-4.1` - Strong non-reasoning model, simpler and snappy
+Create `.env.local` in project root:
 
-**Mistral Models**:
-- `mistral-large-latest` - Mistral Large 3 (41B active, 675B total)
+```env
+# Required: OpenAI API
+OPENAI_API_KEY=sk-proj-your-key-here
+OPENAI_MODEL=gpt-4.1-nano
 
-### Provider Selection
+# Optional: Qdrant for document upload
+QDRANT_URL=https://your-cluster.us-east-1-1.aws.cloud.qdrant.io
+QDRANT_API_KEY=your-qdrant-api-key
+QDRANT_COLLECTION=onlyfinance-kb
+```
 
-To switch between providers, change `LLM_PROVIDER`:
-- `LLM_PROVIDER=openai` - Use OpenAI (default)
-- `LLM_PROVIDER=mistral` - Use Mistral Large 3
-
-## 2. Run Development Server
+### 3. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-## 3. Open Browser
+Open [http://localhost:3000](http://localhost:3000)
 
-Navigate to [http://localhost:3000](http://localhost:3000)
+## Qdrant Setup (Optional)
 
-## 4. Test the Chat
+If you want document upload functionality:
 
-Try these prompts:
-- "I make 20k AED a month and want to buy in Marina for 2M"
-- "Should I buy or keep renting?"
-- "I'm only staying 2 years in Dubai"
+### Option 1: Qdrant Cloud (Free Tier)
 
-## 5. Deploy to Vercel
+1. Go to https://cloud.qdrant.io/
+2. Sign up (GitHub/Google/Email)
+3. Create cluster:
+   - Name: `onlyfinance-kb`
+   - Region: **N. Virginia (us-east-1)**
+   - Plan: Free (1GB)
+4. Copy cluster URL and API key
+5. Add to `.env.local`
 
-1. Push this code to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Import your repository
-4. Add environment variable: `OPENAI_API_KEY`
-5. Deploy!
+### Option 2: Self-Hosted Qdrant
+
+```bash
+docker run -p 6333:6333 qdrant/qdrant
+```
+
+Then use:
+```env
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=  # Leave empty for local
+```
+
+## Verification
+
+### Test Chat (No KB)
+
+1. Open http://localhost:3000
+2. Type: "What is compound interest?"
+3. Should get response from GPT-4.1-nano
+
+### Test Document Upload (With KB)
+
+1. Click K-Base sidebar toggle
+2. Upload a finance document (TXT/MD/PDF/DOCX)
+3. Wait for validation
+4. Ask question about the document
+5. Response should include citation
 
 ## Troubleshooting
 
-If you see errors about missing API key:
-- Make sure `.env.local` exists
-- Make sure the key starts with `sk-`
-- Restart the dev server after adding the key
+### "OpenAI API key not found"
+- Check `.env.local` exists in project root
+- Verify key starts with `sk-`
+- Restart dev server after adding key
 
-If the chat doesn't respond:
-- Check browser console for errors
-- Check terminal for API errors
-- Verify your OpenAI API key has credits
+### "Cannot connect to Qdrant"
+- Check `QDRANT_URL` is correct
+- Verify API key is set
+- Ensure cluster is running (not provisioning)
+
+### Typing animation issues
+- Clear browser cache
+- Check console for errors
+- Verify React version is 18.3.1
+
+### Upload fails
+- Check file size (< 10MB)
+- Verify file type (PDF/DOCX/TXT/MD)
+- Check Qdrant connection
+- View logs in `logs/` folder
+
+## Development Tips
+
+### Hot Reload
+- Changes to `app/` auto-reload
+- Changes to `lib/` may need manual refresh
+- Changes to `.env.local` require restart
+
+### Logging
+- Check `logs/app-YYYY-MM-DD.log` for details
+- Console shows real-time logs
+- Set `LOG_LEVEL=DEBUG` for verbose output
+
+### Testing
+```bash
+# Type check
+npm run build
+
+# Lint
+npm run lint
+```
+
+## Next Steps
+
+- Upload finance documents to test KB
+- Customize system prompt in `app/api/chat/route.ts`
+- Adjust typing speed in `app/page.tsx` (CPS constant)
+- Deploy to Vercel (see DEPLOYMENT.md)

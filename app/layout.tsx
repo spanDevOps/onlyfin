@@ -10,10 +10,11 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Rivo - UAE Real Estate AI Advisor",
-  description: "Unbiased AI guidance for UAE property decisions. No commission pressure, just facts.",
+  title: "OnlyFin - AI Finance Assistant",
+  description: "Your specialized AI finance assistant with knowledge base capabilities. Upload documents and get expert financial guidance.",
   icons: {
-    icon: '/rivo-icon.png',
+    icon: '/onlyf-icon.png',
+    apple: '/onlyf-icon.png',
   },
 };
 
