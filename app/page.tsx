@@ -599,6 +599,16 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen relative" style={{ backgroundColor: isDark ? '#0d1117' : '#c5c7ca' }}>
+      {/* Violet Gradient Strip at Extreme Left Edge */}
+      <div 
+        className="absolute left-0 top-0 h-full w-2 z-30"
+        style={{
+          background: isDark 
+            ? 'linear-gradient(to right, #8445bf, #0d1117)'
+            : 'linear-gradient(to right, #8445bf, #c5c7ca)'
+        }}
+      />
+      
       {/* K-Base Sidebar with Drag & Drop - Overlay */}
       <div 
         className={`absolute left-0 top-0 h-full border-r border-gray-700 overflow-y-auto transition-all duration-300 ease-in-out z-40 ${kbExpanded ? 'w-[calc(100%-96px)]' : 'w-0'} max-w-80`} 
@@ -665,7 +675,7 @@ export default function Chat() {
         onClick={() => setKbExpanded(!kbExpanded)}
         className="absolute top-1/2 -translate-y-1/2 z-50"
         style={{
-          left: kbExpanded ? 'min(calc(100vw - 96px), 320px)' : '0px',
+          left: kbExpanded ? 'min(calc(100vw - 96px), 320px)' : '8px',
           width: '44px',
           height: '500px',
           transition: 'left 300ms ease-in-out'
@@ -1002,6 +1012,11 @@ export default function Chat() {
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                     </svg>
+                                  ) : tool.toolName === 'getUserLocation' ? (
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
                                   ) : (
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1010,10 +1025,16 @@ export default function Chat() {
                                   <span className="font-medium">
                                     {tool.toolName === 'searchKnowledgeBase' && 'Searching knowledge base...'}
                                     {tool.toolName === 'searchWeb' && 'Searching the web...'}
+                                    {tool.toolName === 'getUserLocation' && 'Getting your location...'}
                                   </span>
                                   {tool.state === 'result' && tool.result?.results?.length > 0 && (
                                     <span className="opacity-70">
                                       Found {tool.result.results.length} {tool.toolName === 'searchWeb' ? 'web result(s)' : 'document(s)'}
+                                    </span>
+                                  )}
+                                  {tool.state === 'result' && tool.toolName === 'getUserLocation' && tool.result?.location && (
+                                    <span className="opacity-70">
+                                      {tool.result.location.city}, {tool.result.location.country}
                                     </span>
                                   )}
                                 </div>

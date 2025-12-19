@@ -207,6 +207,47 @@ export async function POST(req: Request) {
       maxSteps: 5,
       toolChoice: 'auto', // Let LLM decide when to use tools
       tools: {
+        getUserLocation: tool({
+          description: 'Get the user\'s approximate location (country, city, timezone, currency) to provide location-specific financial advice. Use this when you need to tailor responses based on location (e.g., tax advice, currency, local regulations, time-sensitive information).',
+          parameters: z.object({}),
+          execute: async () => {
+            try {
+              logger.info('TOOL_LOCATION', 'Getting user location');
+              
+              // Call our location API
+              const locationResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/location`, {
+                headers: {
+                  'x-forwarded-for': req.headers.get('x-forwarded-for') || '',
+                  'x-real-ip': req.headers.get('x-real-ip') || '',
+                }
+              });
+              
+              const locationData = await locationResponse.json();
+              
+              logger.info('TOOL_LOCATION_RESULT', 'Location retrieved', {
+                country: locationData.location?.country,
+                city: locationData.location?.city
+              });
+              
+              return {
+                success: true,
+                location: locationData.location
+              };
+            } catch (error) {
+              logger.error('TOOL_LOCATION_ERROR', 'Failed to get location', error);
+              return {
+                success: false,
+                message: 'Could not determine user location',
+                location: {
+                  country: 'Unknown',
+                  city: 'Unknown',
+                  timezone: 'UTC',
+                  currency: 'USD'
+                }
+              };
+            }
+          },
+        }),
         searchKnowledgeBase: tool({
           description: 'MANDATORY: Search the knowledge base for relevant financial documents. You MUST call this tool FIRST for EVERY query except simple greetings (use your judgment to determine what is a pure greeting vs a question). K-Base results have HIGHEST PRIORITY when formulating your response. ⚠️ CRITICAL: If this tool returns results with rerankScore > 0.5, you MUST cite them using [Source: filename, validation: XX%] format and you should NOT call searchWeb unless the query explicitly needs current/latest information.',
           parameters: z.object({
