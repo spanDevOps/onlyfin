@@ -1,19 +1,140 @@
 'use client';
 
 import { useChat, Message } from 'ai/react';
-import { useRef, useEffect, useState, useLayoutEffect } from 'react';
+import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import FileUpload from '@/components/FileUpload';
 import KBManager from '@/components/KBManager';
 
-const CPS = 45; // characters per second (50% faster than 30)
+const CPS = 70; // characters per second (balanced speed for readability)
+
+// Color palette for suggestions and presets - organized by color family
+const COLOR_PALETTE = [
+  // Green family
+  '10ea5d',
+  '85eb34',
+  '62f608',
+  '33c73a',
+  // Cyan family
+  '01fff4',
+  // Yellow family
+  'fffa0c',
+  'ffff08',
+  // Pink/Magenta family
+  'f712e8',
+  'f60062',
+  'f142ee',
+  // Purple family
+  '9333ea',
+  // Blue family
+  '2323ff',
+  '3c14cf',
+  '3634da',
+  '3154e6',
+  '2b74f0',
+  '2593fc',
+  // Orange family
+  'f75900',
+  'f76c32',
+  // Red family
+  'db0000',
+  // Light family
+  'e5f2ff'
+];
+
+// Get random color with diversity - ensures each color is used at least once before repeating
+const getRandomColorWithDiversity = (usedColors: string[] = []) => {
+  // Count how many times each color has been used
+  const colorCounts = COLOR_PALETTE.map(color => ({
+    color,
+    count: usedColors.filter(used => used === color).length
+  }));
+  
+  // Find the minimum count
+  const minCount = Math.min(...colorCounts.map(c => c.count));
+  
+  // Get colors that have been used the least
+  const leastUsedColors = colorCounts
+    .filter(c => c.count === minCount)
+    .map(c => c.color);
+  
+  // Randomly select from least used colors
+  return leastUsedColors[Math.floor(Math.random() * leastUsedColors.length)];
+};
+
+// Convert hex to RGB
+const hexToRgb = (hex: string) => {
+  const cleanHex = hex.replace('#', '');
+  return {
+    r: parseInt(cleanHex.substring(0, 2), 16),
+    g: parseInt(cleanHex.substring(2, 4), 16),
+    b: parseInt(cleanHex.substring(4, 6), 16)
+  };
+};
+
+// Calculate relative luminance (WCAG formula)
+const getLuminance = (r: number, g: number, b: number) => {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const val = c / 255;
+    return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+};
+
+// Calculate contrast ratio between two colors
+const getContrastRatio = (lum1: number, lum2: number) => {
+  const lighter = Math.max(lum1, lum2);
+  const darker = Math.min(lum1, lum2);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+// Get optimal background color based on text color and theme background
+const getCardBackground = (textColor: string, isDark: boolean) => {
+  const textRgb = hexToRgb(textColor);
+  const textLum = getLuminance(textRgb.r, textRgb.g, textRgb.b);
+  
+  // Theme background colors
+  const themeBg = isDark ? '#0d1117' : '#c5c7ca';
+  const themeBgRgb = hexToRgb(themeBg);
+  const themeBgLum = getLuminance(themeBgRgb.r, themeBgRgb.g, themeBgRgb.b);
+  
+  // We want high contrast with text, but also blend with theme
+  // Try different background luminance values and pick the best
+  const candidates = [
+    { lum: 0.95, color: '#f5f5f5' },  // Very light
+    { lum: 0.85, color: '#d9d9d9' },  // Light
+    { lum: 0.70, color: '#b3b3b3' },  // Medium-light
+    { lum: 0.50, color: '#808080' },  // Medium
+    { lum: 0.30, color: '#4d4d4d' },  // Medium-dark
+    { lum: 0.15, color: '#262626' },  // Dark
+    { lum: 0.05, color: '#0d0d0d' },  // Very dark
+  ];
+  
+  // Find the candidate with best contrast to text (minimum 4.5:1 for WCAG AA)
+  let bestCandidate = candidates[0];
+  let bestContrast = 0;
+  
+  for (const candidate of candidates) {
+    const contrast = getContrastRatio(textLum, candidate.lum);
+    // Prefer candidates that also work well with theme background
+    const themeContrast = getContrastRatio(candidate.lum, themeBgLum);
+    const score = contrast + (themeContrast * 0.3); // Weight text contrast more heavily
+    
+    if (score > bestContrast) {
+      bestContrast = score;
+      bestCandidate = candidate;
+    }
+  }
+  
+  return bestCandidate.color;
+};
 
 export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [kbExpanded, setKbExpanded] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -23,6 +144,41 @@ export default function Chat() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [refreshKB, setRefreshKB] = useState(0);
   const [typedText, setTypedText] = useState('');
+  const [suggestions, setSuggestions] = useState<Array<{ id: string; text: string; color: string; floatDuration: number; xOffset: number; yOffset: number; delay: number }>>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Generate stable colors and animations for preset buttons (only once on mount)
+  const presetColors = useRef<string[]>([]);
+  const presetAnimations = useRef<Array<{ duration: number; xOffset: number; yOffset: number }>>([]);
+  
+  if (presetColors.current.length === 0) {
+    // Generate colors with diversity - each color family used once before repeating
+    const colors: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      colors.push(getRandomColorWithDiversity(colors));
+    }
+    presetColors.current = colors;
+    
+    presetAnimations.current = Array(8).fill(0).map(() => ({
+      duration: 3 + Math.random() * 4, // 3-7 seconds
+      xOffset: (Math.random() - 0.5) * 8, // -4px to +4px
+      yOffset: (Math.random() - 0.5) * 8, // -4px to +4px
+    }));
+  }
+  
+  // Random corner lottie (only once on mount)
+  // Automatically detects lottie files numbered 1.lottie, 2.lottie, etc. in /public/corners/
+  // To add more: just add numbered files (3.lottie, 4.lottie, etc.) and update NEXT_PUBLIC_CORNER_LOTTIE_COUNT in .env.local
+  const CORNER_LOTTIE_COUNT = parseInt(process.env.NEXT_PUBLIC_CORNER_LOTTIE_COUNT || '2', 10);
+  
+  const cornerLottie = useRef<string | null>(null);
+  
+  if (!cornerLottie.current) {
+    const randomNumber = Math.floor(Math.random() * CORNER_LOTTIE_COUNT) + 1; // 1 to CORNER_LOTTIE_COUNT
+    cornerLottie.current = `${randomNumber}.lottie`;
+  }
   
   // Typing effect for welcome message with smart delays
   useEffect(() => {
@@ -112,6 +268,66 @@ export default function Chat() {
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, stop } = useChat();
 
+  // Check if currently animating
+  const isAnimating = animatingId !== null;
+
+  // Generate suggestions after assistant response completes
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    const secondLastMessage = messages[messages.length - 2];
+    
+    // Only generate if last message is from assistant and we're not loading/animating
+    if (lastMessage && lastMessage.role === 'assistant' && !isLoading && !isAnimating) {
+      const assistantText = lastMessage.content || '';
+      const userText = secondLastMessage?.content || '';
+      
+      // Skip for simple greetings
+      const isGreeting = userText.toLowerCase().match(/^(hi|hello|hey|sup|yo)$/);
+      if (isGreeting) {
+        setSuggestions([]);
+        return;
+      }
+      
+      // Generate suggestions
+      setLoadingSuggestions(true);
+      fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lastUserMessage: userText,
+          lastAssistantMessage: assistantText,
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.suggestions) {
+            // Generate colors with diversity - each color family used once before repeating
+            const colors: string[] = [];
+            const newSuggestions = data.suggestions.map((text: string, i: number) => {
+              const color = getRandomColorWithDiversity(colors);
+              colors.push(color);
+              return {
+                id: `suggestion-${lastMessage.id}-${i}`,
+                text: text,
+                color: color,
+                floatDuration: 6 + Math.random() * 6, // 6-12 seconds for very slow movement
+                xOffset: (Math.random() - 0.5) * 8,
+                yOffset: (Math.random() - 0.5) * 8,
+                delay: i * 0.15 // Staggered appearance: 150ms between each
+              };
+            });
+            setSuggestions(newSuggestions);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to generate suggestions:', err);
+        })
+        .finally(() => {
+          setLoadingSuggestions(false);
+        });
+    }
+  }, [messages, isLoading, isAnimating]);
+
   // Initialize renderedById immediately when new assistant message appears
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
@@ -177,13 +393,54 @@ export default function Chat() {
     };
   }, [animatingId, isLoading]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (smooth = true) => {
+    if (smooth) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    }
   };
 
+  // Ultra smooth immediate scroll for messages
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(true);
   }, [messages, renderedById]);
+
+  // Ultra smooth delayed scroll for suggestions
+  useEffect(() => {
+    if (suggestions.length > 0) {
+      // Wait for suggestions to render and animations to start
+      const timeoutId = setTimeout(() => {
+        scrollToBottom(true);
+      }, 300); // 300ms delay for smooth transition
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [suggestions]);
+
+  // Check if scroll button should be visible
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
+      setShowScrollButton(isScrolledUp);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    
+    // Use setTimeout to avoid triggering during render
+    const timeoutId = setTimeout(() => {
+      handleScroll();
+    }, 100);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -277,9 +534,6 @@ export default function Chat() {
     return message.content ?? "";
   };
 
-  // Check if currently animating
-  const isAnimating = animatingId !== null;
-
   // Refocus input after animation completes
   useEffect(() => {
     if (!isLoading && !isAnimating) {
@@ -292,7 +546,7 @@ export default function Chat() {
   }, [isLoading, isAnimating]);
 
   return (
-    <div className="flex h-screen relative" style={{ backgroundColor: isDark ? '#1a1d24' : '#c5c7ca' }}>
+    <div className="flex h-screen relative" style={{ backgroundColor: isDark ? '#0d1117' : '#c5c7ca' }}>
       {/* K-Base Sidebar with Drag & Drop - Overlay */}
       <div 
         className={`absolute left-0 top-0 h-full border-r border-gray-700 overflow-y-auto transition-all duration-300 ease-in-out z-40 ${kbExpanded ? 'w-[calc(100%-96px)]' : 'w-0'} max-w-80`} 
@@ -375,8 +629,12 @@ export default function Chat() {
           style={{ overflow: 'visible' }}
         >
           <defs>
-            <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style={{ stopColor: '#11141a', stopOpacity: 1 }} />
+            <linearGradient id="purpleGradientDark" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: '#0d1117', stopOpacity: 1 }} />
+              <stop offset="100%" style={{ stopColor: '#5f268c', stopOpacity: 1 }} />
+            </linearGradient>
+            <linearGradient id="purpleGradientLight" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: '#c5c7ca', stopOpacity: 1 }} />
               <stop offset="100%" style={{ stopColor: '#5f268c', stopOpacity: 1 }} />
             </linearGradient>
           </defs>
@@ -389,13 +647,38 @@ export default function Chat() {
                C 6,285 0,300 0,320
                L 0,500 
                Z"
-            fill="url(#purpleGradient)"
+            fill={isDark ? "url(#purpleGradientDark)" : "url(#purpleGradientLight)"}
           />
         </svg>
       </button>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col relative">
+        
+        {/* Scroll to Bottom Button */}
+        {showScrollButton && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
+            <button
+              onClick={() => scrollToBottom()}
+              className="group relative p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+              style={{ backgroundColor: isDark ? '#5f268c' : '#9333ea' }}
+              title="Scroll to bottom"
+            >
+              <svg 
+                className="w-5 h-5 text-white" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              {/* Tooltip */}
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Scroll to bottom
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Header - Half Size */}
         <div className="border-gray-600/30 backdrop-blur-sm shadow-sm border-b px-6 py-1.5" style={{ backgroundColor: '#11141a' }}>
@@ -428,16 +711,16 @@ export default function Chat() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 relative">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 relative">
           <div className="max-w-4xl mx-auto space-y-3 relative z-20">
             {messages.length === 0 && (
               <div className="text-center py-16">
                 <h2 className={`text-4xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4 tracking-widest`}>Hi! I'm OnlyFin.</h2>
 <p className={`text-sm ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-10 min-h-[3rem] text-left max-w-2xl mx-auto tracking-widest`}>{typedText}<span style={{ animation: 'cursor-blink 0.8s infinite' }}>|</span></p>
                 
-                <div className="flex flex-col gap-4 items-center max-w-4xl mx-auto">
+                <div className="flex flex-col gap-6 items-center max-w-4xl mx-auto">
                   {/* Row 1: 3 cards */}
-                  <div className="flex gap-4 justify-center">
+                  <div className="flex gap-6 justify-center">
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How should I budget my monthly expenses?" } } as any);
@@ -446,10 +729,22 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[0], isDark),
+                        color: `#${presetColors.current[0]}`,
+                        borderColor: `#${presetColors.current[0]}40`,
+                        animation: `float-0 ${presetAnimations.current[0].duration}s ease-in-out infinite`,
+                      }}
                     >
                       How to budget expenses?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-0 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[0].xOffset}px, ${presetAnimations.current[0].yOffset}px); }
+                      }
+                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "What are the best investment options for beginners?" } } as any);
@@ -458,10 +753,22 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[1], isDark),
+                        color: `#${presetColors.current[1]}`,
+                        borderColor: `#${presetColors.current[1]}40`,
+                        animation: `float-1 ${presetAnimations.current[1].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Best investments for beginners?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-1 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[1].xOffset}px, ${presetAnimations.current[1].yOffset}px); }
+                      }
+                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How can I improve my credit score?" } } as any);
@@ -470,14 +777,26 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[2], isDark),
+                        color: `#${presetColors.current[2]}`,
+                        borderColor: `#${presetColors.current[2]}40`,
+                        animation: `float-2 ${presetAnimations.current[2].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Improve credit score?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-2 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[2].xOffset}px, ${presetAnimations.current[2].yOffset}px); }
+                      }
+                    `}</style>
                   </div>
                   
                   {/* Row 2: 2 cards */}
-                  <div className="flex gap-4 justify-center">
+                  <div className="flex gap-6 justify-center">
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "What's the difference between stocks and bonds?" } } as any);
@@ -486,10 +805,22 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[3], isDark),
+                        color: `#${presetColors.current[3]}`,
+                        borderColor: `#${presetColors.current[3]}40`,
+                        animation: `float-3 ${presetAnimations.current[3].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Stocks vs bonds?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-3 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[3].xOffset}px, ${presetAnimations.current[3].yOffset}px); }
+                      }
+                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How much should I save for retirement?" } } as any);
@@ -498,14 +829,26 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[4], isDark),
+                        color: `#${presetColors.current[4]}`,
+                        borderColor: `#${presetColors.current[4]}40`,
+                        animation: `float-4 ${presetAnimations.current[4].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Retirement savings?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-4 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[4].xOffset}px, ${presetAnimations.current[4].yOffset}px); }
+                      }
+                    `}</style>
                   </div>
                   
                   {/* Row 3: 3 cards */}
-                  <div className="flex gap-4 justify-center">
+                  <div className="flex gap-6 justify-center">
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "What are tax deductions I should know about?" } } as any);
@@ -514,10 +857,22 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[5], isDark),
+                        color: `#${presetColors.current[5]}`,
+                        borderColor: `#${presetColors.current[5]}40`,
+                        animation: `float-5 ${presetAnimations.current[5].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Tax deductions?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-5 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[5].xOffset}px, ${presetAnimations.current[5].yOffset}px); }
+                      }
+                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "Should I pay off debt or invest?" } } as any);
@@ -526,10 +881,22 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[6], isDark),
+                        color: `#${presetColors.current[6]}`,
+                        borderColor: `#${presetColors.current[6]}40`,
+                        animation: `float-6 ${presetAnimations.current[6].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Pay debt or invest?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-6 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[6].xOffset}px, ${presetAnimations.current[6].yOffset}px); }
+                      }
+                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How do I start building an emergency fund?" } } as any);
@@ -538,10 +905,22 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className={`px-2.5 py-1.5 text-xs tracking-widest ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white hover:bg-gray-600/50' : 'bg-white/80 border-gray-400/60 text-gray-800 font-medium hover:bg-gray-100/80'} border rounded-xl transition-all duration-200 backdrop-blur-sm`}
+                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      style={{
+                        backgroundColor: getCardBackground(presetColors.current[7], isDark),
+                        color: `#${presetColors.current[7]}`,
+                        borderColor: `#${presetColors.current[7]}40`,
+                        animation: `float-7 ${presetAnimations.current[7].duration}s ease-in-out infinite`,
+                      }}
                     >
                       Emergency fund tips?
                     </button>
+                    <style jsx>{`
+                      @keyframes float-7 {
+                        0%, 100% { transform: translate(0, 0); }
+                        50% { transform: translate(${presetAnimations.current[7].xOffset}px, ${presetAnimations.current[7].yOffset}px); }
+                      }
+                    `}</style>
                   </div>
                 </div>
               </div>
@@ -550,24 +929,39 @@ export default function Chat() {
             {messages.map((message, index) => {
               return (
                 <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%]`}>
-                    <div className={`${message.role === 'user' ? 'text-white rounded-2xl px-4 py-1 shadow-sm' : 'px-4 py-2'}`} style={message.role === 'user' ? { background: 'linear-gradient(to right, #5f268c, #11141a)' } : {}}>
+                  <div className={`max-w-[85%] ${message.role === 'user' ? 'animate-slide-brake' : ''}`}>
+                    <div 
+                      className={`${message.role === 'user' ? 'rounded-l-2xl px-4 py-1 shadow-sm' : 'px-4 py-2'}`} 
+                      style={message.role === 'user' ? { 
+                        background: isDark ? 'linear-gradient(to right, #5f268c, transparent)' : 'linear-gradient(to right, #5f268c, transparent)',
+                        backgroundImage: isDark 
+                          ? 'linear-gradient(to right, #5f268c 0%, rgba(13, 17, 23, 0) 100%)'
+                          : 'linear-gradient(to right, #5f268c 0%, rgba(197, 199, 202, 0) 100%)'
+                      } : {}}
+                    >
                       {message.role === 'assistant' ? (
                         <>
                           {/* Show tool calls if present */}
                           {message.toolInvocations && message.toolInvocations.length > 0 && (
-                            <div className="mb-2 space-y-1">
+                            <div className="mb-2 flex flex-wrap gap-2">
                               {message.toolInvocations.map((tool: any, toolIndex: number) => (
                                 <div key={toolIndex} className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] ${isDark ? 'bg-purple-900/30 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                  </svg>
+                                  {tool.toolName === 'searchKnowledgeBase' ? (
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                  )}
                                   <span className="font-medium">
                                     {tool.toolName === 'searchKnowledgeBase' && 'Searching knowledge base...'}
+                                    {tool.toolName === 'searchWeb' && 'Searching the web...'}
                                   </span>
                                   {tool.state === 'result' && tool.result?.results?.length > 0 && (
                                     <span className="opacity-70">
-                                      Found {tool.result.results.length} document(s)
+                                      Found {tool.result.results.length} {tool.toolName === 'searchWeb' ? 'web result(s)' : 'document(s)'}
                                     </span>
                                   )}
                                 </div>
@@ -585,16 +979,63 @@ export default function Chat() {
                                   if (typeof content === 'string' && content.includes('[Source:')) {
                                     const parts = content.split(/(\[Source:[^\]]+\])/g);
                                     return (
-                                      <p className={`mb-2 text-xs leading-loose tracking-widest ${isDark ? 'text-white' : 'text-gray-800 font-semibold'}`}>
-                                        {parts.map((part, i) => 
-                                          part.startsWith('[Source:') ? 
-                                            <span key={i} className="font-mono text-[9px] font-extralight opacity-60 tracking-normal">{part}</span> : 
-                                            part
-                                        )}
+                                      <p className={`mb-2 text-xs leading-loose tracking-widest opacity-70 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                                        {parts.map((part, i) => {
+                                          if (part.startsWith('[Source:')) {
+                                            // Check if it's a URL citation
+                                            const urlMatch = part.match(/\[Source:\s*(https?:\/\/[^\]]+)\]/);
+                                            if (urlMatch) {
+                                              const url = urlMatch[1];
+                                              // Extract domain/title from URL
+                                              try {
+                                                const urlObj = new URL(url);
+                                                const domain = urlObj.hostname.replace('www.', '');
+                                                return (
+                                                  <span key={i}>
+                                                    [Source: <a href={url} target="_blank" rel="noopener noreferrer" className={`underline hover:opacity-80 transition-opacity cursor-pointer ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>{domain}</a>]
+                                                  </span>
+                                                );
+                                              } catch {
+                                                // If URL parsing fails, show as-is
+                                                return (
+                                                  <span key={i}>{part}</span>
+                                                );
+                                              }
+                                            }
+                                            // Not a URL citation (e.g., file citation)
+                                            return (
+                                              <span key={i}>{part}</span>
+                                            );
+                                          }
+                                          return part;
+                                        })}
                                       </p>
                                     );
                                   }
                                   return <p className={`mb-2 text-xs leading-loose tracking-widest ${isDark ? 'text-white' : 'text-gray-800 font-semibold'}`} {...props} />;
+                                },
+                                a: ({ node, ...props }) => {
+                                  // Custom link handler for citations
+                                  const href = props.href || '';
+                                  if (href.startsWith('http')) {
+                                    try {
+                                      const urlObj = new URL(href);
+                                      const domain = urlObj.hostname.replace('www.', '');
+                                      return (
+                                        <a 
+                                          href={href} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className={`underline hover:opacity-80 transition-opacity cursor-pointer ${isDark ? 'text-blue-400' : 'text-blue-700'}`}
+                                        >
+                                          {domain}
+                                        </a>
+                                      );
+                                    } catch {
+                                      return <a {...props} target="_blank" rel="noopener noreferrer" className={`underline hover:opacity-80 transition-opacity cursor-pointer ${isDark ? 'text-blue-400' : 'text-blue-700'}`} />;
+                                    }
+                                  }
+                                  return <a {...props} target="_blank" rel="noopener noreferrer" className={`underline hover:opacity-80 transition-opacity cursor-pointer ${isDark ? 'text-blue-400' : 'text-blue-700'}`} />;
                                 },
                                 strong: ({ node, ...props }) => <strong className={isDark ? 'text-white font-medium' : 'text-gray-900 font-bold'} {...props} />,
                                 code: ({ node, ...props }: any) => props.inline ? <code className="font-mono text-[9px] font-extralight opacity-60 tracking-normal" {...props} /> : <code {...props} />,
@@ -608,11 +1049,24 @@ export default function Chat() {
                           </div>
                         </>
                       ) : (
-                        <div className="whitespace-pre-wrap text-xs tracking-widest leading-loose">{message.content}</div>
+                        <div 
+                          className="whitespace-pre-wrap text-xs tracking-widest leading-loose font-semibold"
+                          style={{
+                            backgroundImage: isDark 
+                              ? 'linear-gradient(to right, #ffffff 0%, #9333ea 100%)'
+                              : 'linear-gradient(to right, #1f2937 0%, #9333ea 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            color: 'transparent'
+                          }}
+                        >
+                          {message.content}
+                        </div>
                       )}
                     </div>
                     {message.role === 'assistant' && getAssistantText(message, index).trim() && (
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-0.5 ml-4">
                         <button
                           onClick={() => copyToClipboard(getAssistantText(message, index), message.id)}
                           className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-all duration-200 ${isDark ? 'text-white hover:text-white hover:bg-gray-700/30' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/30'}`}
@@ -640,10 +1094,66 @@ export default function Chat() {
               );
             })}
 
+            {/* Suggestion Cards */}
+            {!isLoading && !isAnimating && suggestions.length > 0 && messages.length > 0 && (
+              <div className="flex justify-start mt-4">
+                <div className="max-w-[85%]">
+                  <div className="flex flex-wrap gap-6 ml-4">
+                    {suggestions.map((suggestion, index) => (
+                      <React.Fragment key={suggestion.id}>
+                        <button
+                          onClick={() => {
+                            handleInputChange({ target: { value: suggestion.text } } as any);
+                            setSuggestions([]); // Clear suggestions after click
+                            setTimeout(() => {
+                              const form = document.querySelector('form');
+                              if (form) form.requestSubmit();
+                            }, 50);
+                          }}
+                          className="px-3 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95"
+                          style={{
+                            backgroundColor: getCardBackground(suggestion.color, isDark),
+                            color: `#${suggestion.color}`,
+                            borderColor: `#${suggestion.color}40`,
+                            animation: `fadeInFloat-${index} 0.5s ease-out ${suggestion.delay}s both, float-suggestion-${index} ${suggestion.floatDuration}s ease-in-out infinite ${suggestion.delay}s`,
+                          }}
+                        >
+                          {suggestion.text}
+                        </button>
+                        <style jsx>{`
+                          @keyframes fadeInFloat-${index} {
+                            from {
+                              opacity: 0;
+                            }
+                            to {
+                              opacity: 1;
+                            }
+                          }
+                          @keyframes float-suggestion-${index} {
+                            0%, 100% { transform: translate(0, 0); }
+                            50% { transform: translate(${suggestion.xOffset}px, ${suggestion.yOffset}px); }
+                          }
+                        `}</style>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  {loadingSuggestions && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <svg className="w-3 h-3 text-purple-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Generating suggestions...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Loading/Typing indicator */}
             {(isLoading || isAnimating) && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-2 py-3">
+                <div className="flex items-center gap-2 py-3 ml-4">
                   {isLoading ? (
                     <>
                       <svg className="w-5 h-5 text-purple-400 animate-fast-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -671,12 +1181,13 @@ export default function Chat() {
         <div className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-2 relative" style={{ backgroundColor: '#11141a' }}>
           <form onSubmit={(e) => {
             e.preventDefault();
+            setSuggestions([]); // Clear suggestions when user sends a message
             handleSubmit(e);
             requestAnimationFrame(() => {
               inputRef.current?.focus();
             });
           }} className="max-w-2xl mx-auto">
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-3 items-center">
               {/* Upload Button */}
               <input
                 ref={fileInputRef}
@@ -735,10 +1246,10 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Revenue Animation - Bottom Right */}
-      <div className="fixed bottom-4 right-4 z-50 pointer-events-none">
+      {/* Random Corner Animation - Right Bottom */}
+      <div className="fixed bottom-0 right-0 z-50 pointer-events-none">
         <DotLottieReact
-          src="/revenue.lottie"
+          src={`/corners/${cornerLottie.current}`}
           loop
           autoplay
           style={{ width: 180, height: 180 }}

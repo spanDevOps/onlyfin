@@ -32,6 +32,13 @@ export default function FileUpload() {
       
       const data = await response.json();
       setResult(data);
+      
+      // Reload the page after successful upload to refresh K-Base list
+      if (data.success) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } catch (error) {
       setResult({ error: 'Upload failed. Please try again.' });
     } finally {
@@ -123,10 +130,10 @@ export default function FileUpload() {
       </div>
       
       {uploading && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 animate-pulse">
           <div className="flex items-center space-x-3">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            <span className="text-sm text-blue-700">Processing document...</span>
+            <span className="text-sm font-medium text-blue-700">Uploading document...</span>
           </div>
         </div>
       )}

@@ -29,6 +29,17 @@ body {
   50% { opacity: 0.4; }
 }
 
+@keyframes slide-brake {
+  0% {
+    transform: translateX(300px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 .animate-toast {
   animation: toast-fade 5s ease-in-out forwards;
 }
@@ -36,3 +47,20 @@ body {
 .animate-fast-pulse {
   animation: fast-pulse 0.8s ease-in-out infinite;
 }
+
+.animate-slide-brake {
+  animation: slide-brake 0.7s cubic-bezier(0.11, 0.77, 0.29, 0.98) forwards;
+}
+
+/* Prevent text blur during floating animations */
+button, .floating-card {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+}
+
+

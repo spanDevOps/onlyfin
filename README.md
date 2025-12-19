@@ -16,8 +16,10 @@ Open [http://localhost:3000](http://localhost:3000)
 - **Finance-focused conversations** with GPT-4.1-nano
 - **Document upload** (PDF, DOCX, TXT, MD) to knowledge base
 - **Semantic search** using Qdrant vector database
-- **Smart typing animation** (45 CPS) with no flash
-- **Citation system** with validation scores
+- **Web search** using Tavily API for current information
+- **Smart citations** - only cites when using external sources (KB/web)
+- **Smart typing animation** (90 CPS) with no flash
+- **Follow-up suggestions** - AI-generated next question cards (via tool call)
 - **Modern UI** with purple gradient theme and Lottie animations
 
 ## 🛠️ Tech Stack
@@ -49,6 +51,9 @@ OPENAI_MODEL=gpt-4.1-nano
 QDRANT_URL=your_qdrant_url
 QDRANT_API_KEY=your_qdrant_key
 QDRANT_COLLECTION=onlyfinance-kb
+
+# Tavily Web Search (optional - for current information)
+TAVILY_LAMBDA_URL=your_aws_lambda_url
 ```
 
 ### 3. Run Development Server
@@ -146,14 +151,20 @@ filter: {
 ### Typing Animation
 - **No flash**: Uses refs instead of state to prevent React re-renders
 - **Smart buffering**: Waits for 10 characters before starting
-- **Smooth streaming**: 45 CPS with requestAnimationFrame
+- **Fast streaming**: 90 CPS with requestAnimationFrame
 - **HMR-safe**: Refs prevent animation restart on hot reload
 
 ### Knowledge Base
 - **Semantic search**: Vector embeddings for intelligent matching
 - **Validation**: LLM-based fact checking with confidence scores
-- **Citations**: Every response includes source with validation score
+- **Citations**: Cites sources when using KB or web search
 - **In-memory filtering**: Filters by validationScore >= 0.7 after query
+
+### Web Search
+- **Tavily integration**: Real-time web search for current information
+- **AWS Lambda**: Secure API key management via Lambda function
+- **Smart usage**: LLM decides when web search is needed
+- **URL citations**: Every web result includes source URL
 
 ### UI/UX
 - **Purple theme**: Gradient backgrounds and neon purple accents

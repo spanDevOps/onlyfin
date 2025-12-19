@@ -83,8 +83,8 @@ OnlyFin is a finance-focused AI chatbot with document upload, knowledge base sea
 const finalTextById = useRef<Record<string, string>>({});
 const animationStartedFor = useRef<Set<string>>(new Set());
 
-// 45 CPS typing speed
-const CPS = 45;
+// 90 CPS typing speed (doubled for faster reading)
+const CPS = 90;
 const msPerChar = 1000 / CPS;
 
 // Fast pulse animation for indicators
@@ -227,7 +227,8 @@ Update KB UI
 ## Performance Characteristics
 
 - **First token**: < 1 second
-- **Typing speed**: 45 CPS (smooth, readable)
+- **Typing speed**: 90 CPS (fast, engaging)
+- **Response style**: Short, Socratic (2-3 sentences)
 - **KB search**: ~100-200ms
 - **Document upload**: ~10-30s (depends on size)
 - **Validation**: ~5-10s per chunk

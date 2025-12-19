@@ -124,12 +124,16 @@ export default function KBManager() {
               {doc.filename}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-gray-400">
-                {doc.chunks} chunks
+              <span className="text-[10px] text-gray-400">
+                {new Date(doc.uploadDate).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
               </span>
-              <span className="text-xs text-gray-500">•</span>
+              <span className="text-[10px] text-gray-500">•</span>
               <span
-                className={`text-xs ${
+                className={`text-[10px] ${
                   doc.avgValidation >= 0.9
                     ? 'text-green-400'
                     : doc.avgValidation >= 0.7
@@ -137,7 +141,7 @@ export default function KBManager() {
                     : 'text-red-400'
                 }`}
               >
-                {(doc.avgValidation * 100).toFixed(0)}%
+                {doc.avgValidation >= 0.9 ? 'High Quality' : doc.avgValidation >= 0.7 ? 'Acceptable Quality' : 'Insufficient Quality'}
               </span>
             </div>
           </div>

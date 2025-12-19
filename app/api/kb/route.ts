@@ -6,16 +6,25 @@ export const runtime = 'nodejs';
 
 /**
  * GET /api/kb - List all documents in knowledge base
- * TODO: Implement actual document listing from Pinecone metadata
  */
 export async function GET() {
   try {
-    // For now, return empty array
-    // In production, query Pinecone for unique filenames and metadata
     logger.info('KB_LIST', 'Listing knowledge base documents');
     
+    const { listDocuments } = await import('@/lib/kb/vector-db');
+    const docs = await listDocuments();
+    
+    // Transform to match frontend interface
+    const documents = docs.map(doc => ({
+      id: doc.filename, // Use filename as unique ID
+      filename: doc.filename,
+      uploadDate: doc.uploadDate,
+      chunks: doc.chunkCount,
+      avgValidation: doc.avgValidationScore
+    }));
+    
     return NextResponse.json({
-      documents: []
+      documents
     });
   } catch (error) {
     logger.error('KB_LIST_ERROR', 'Failed to list documents', error);
