@@ -269,9 +269,13 @@ export async function POST(req: Request) {
                 diversityBoost: true
               }, sessionId || undefined);
               
-              logger.info('TOOL_KB_SEARCH_RESULT', `Found ${results.length} documents`, {
+              // Count unique documents (not chunks)
+              const uniqueDocs = new Set(results.map(r => r.source)).size;
+              
+              logger.info('TOOL_KB_SEARCH_RESULT', `Found ${results.length} chunks from ${uniqueDocs} document(s)`, {
                 query: query.substring(0, 100),
                 sources: results.map(r => r.source),
+                uniqueDocs,
                 avgRerankScore: results.length > 0 
                   ? (results.reduce((sum, r) => sum + r.rerankScore, 0) / results.length).toFixed(2)
                   : 0
@@ -287,7 +291,7 @@ export async function POST(req: Request) {
               
               return {
                 success: true,
-                message: `Found ${results.length} relevant document(s) using hybrid search`,
+                message: `Found ${uniqueDocs} document(s) (${results.length} relevant section${results.length > 1 ? 's' : ''})`,
                 results: results.map((result) => ({
                   source: result.source,
                   content: result.content,
