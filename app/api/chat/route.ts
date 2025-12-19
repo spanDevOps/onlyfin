@@ -248,6 +248,60 @@ export async function POST(req: Request) {
             }
           },
         }),
+        getCurrentDateTime: tool({
+          description: 'Get the current server date and time with timezone information. Use this when the user asks about current time, date, or when you need to provide time-sensitive information. Server runs in UTC timezone.',
+          parameters: z.object({}),
+          execute: async () => {
+            try {
+              const now = new Date();
+              
+              // Get various time formats
+              const isoString = now.toISOString();
+              const utcString = now.toUTCString();
+              const localString = now.toLocaleString('en-US', { 
+                timeZone: 'UTC',
+                dateStyle: 'full',
+                timeStyle: 'long'
+              });
+              
+              // Server timezone (Vercel runs in UTC)
+              const serverTimezone = 'UTC';
+              const timezoneOffset = 0; // UTC offset is 0
+              
+              logger.info('TOOL_DATETIME', 'Current date/time retrieved', {
+                iso: isoString,
+                utc: utcString,
+                timezone: serverTimezone
+              });
+              
+              return {
+                success: true,
+                datetime: {
+                  iso: isoString,
+                  utc: utcString,
+                  formatted: localString,
+                  timestamp: now.getTime(),
+                  timezone: serverTimezone,
+                  timezoneOffset: timezoneOffset,
+                  year: now.getUTCFullYear(),
+                  month: now.getUTCMonth() + 1,
+                  day: now.getUTCDate(),
+                  hour: now.getUTCHours(),
+                  minute: now.getUTCMinutes(),
+                  second: now.getUTCSeconds(),
+                  dayOfWeek: now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' }),
+                  note: 'Server time is in UTC. Use getUserLocation tool to get user\'s timezone for local time conversion.'
+                }
+              };
+            } catch (error) {
+              logger.error('TOOL_DATETIME_ERROR', 'Failed to get date/time', error);
+              return {
+                success: false,
+                message: 'Could not retrieve current date/time'
+              };
+            }
+          },
+        }),
         searchKnowledgeBase: tool({
           description: 'MANDATORY: Search the knowledge base for relevant financial documents. You MUST call this tool FIRST for EVERY query except simple greetings (use your judgment to determine what is a pure greeting vs a question). K-Base results have HIGHEST PRIORITY when formulating your response. ⚠️ CRITICAL: If this tool returns results with rerankScore > 0.5, you MUST cite them using [Source: filename, validation: XX%] format and you should NOT call searchWeb unless the query explicitly needs current/latest information.',
           parameters: z.object({
