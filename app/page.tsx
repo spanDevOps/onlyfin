@@ -1348,7 +1348,7 @@ export default function Chat() {
           src={`/corners/${cornerLottie.current}`}
           loop
           autoplay
-          style={{ width: 108, height: 108 }}
+          style={{ width: 138, height: 138 }}
         />
       </div>
 
