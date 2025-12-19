@@ -282,7 +282,7 @@ export default function Chat() {
       setKbExpanded(true);
       
       // Show welcome toast
-      setToast({ message: 'Upload your documents to K-Base for me to refer to, while responding!', type: 'success' });
+      setToast({ message: 'Upload your documents to K-Base for my reference.', type: 'success' });
       
       // Toast stays for 5 seconds
       const toastTimer = setTimeout(() => {
@@ -540,6 +540,14 @@ export default function Chat() {
         setToast({ message: `${file.name} uploaded successfully!`, type: 'success' });
         setRefreshKB(prev => prev + 1); // Trigger KB refresh
         setTimeout(() => setToast(null), 3000);
+        
+        // If sidebar is collapsed, open it for 3 seconds then close
+        if (!kbExpanded) {
+          setKbExpanded(true);
+          setTimeout(() => {
+            setKbExpanded(false);
+          }, 3000);
+        }
       } else {
         setToast({ message: `Upload failed: ${data.error || 'Unknown error'}`, type: 'error' });
         setTimeout(() => setToast(null), 5000);
