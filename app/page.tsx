@@ -1232,11 +1232,11 @@ export default function Chat() {
                               if (form) form.requestSubmit();
                             }, 50);
                           }}
-                          className="px-3 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95"
+                          className="px-3 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
                           style={{
-                            backgroundColor: getCardBackground(suggestion.color, isDark),
-                            color: `#${suggestion.color}`,
-                            borderColor: `#${suggestion.color}40`,
+                            backgroundColor: `#${suggestion.color}`,
+                            color: getOptimalTextColor(suggestion.color, isDark),
+                            borderColor: `#${suggestion.color}`,
                             animation: `fadeInFloat-${index} 0.5s ease-out ${suggestion.delay}s both, float-suggestion-${index} ${suggestion.floatDuration}s ease-in-out infinite ${suggestion.delay}s`,
                           }}
                         >
