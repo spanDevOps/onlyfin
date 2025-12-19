@@ -1055,7 +1055,7 @@ export default function Chat() {
                                   if (typeof content === 'string' && content.includes('[Source:')) {
                                     const parts = content.split(/(\[Source:[^\]]+\])/g);
                                     return (
-                                      <p className={`mb-2 text-xs leading-loose tracking-widest opacity-70 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                                      <p className={`mb-2 text-xs leading-loose tracking-widest ${isDark ? 'text-white' : 'text-gray-800 font-semibold'}`}>
                                         {parts.map((part, i) => {
                                           if (part.startsWith('[Source:')) {
                                             // Check if it's a URL citation
@@ -1067,20 +1067,20 @@ export default function Chat() {
                                                 const urlObj = new URL(url);
                                                 const domain = urlObj.hostname.replace('www.', '');
                                                 return (
-                                                  <span key={i}>
+                                                  <span key={i} className="opacity-70">
                                                     [Source: <a href={url} target="_blank" rel="noopener noreferrer" className={`underline hover:opacity-80 transition-opacity cursor-pointer ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>{domain}</a>]
                                                   </span>
                                                 );
                                               } catch {
                                                 // If URL parsing fails, show as-is
                                                 return (
-                                                  <span key={i}>{part}</span>
+                                                  <span key={i} className="opacity-70">{part}</span>
                                                 );
                                               }
                                             }
                                             // Not a URL citation (e.g., file citation)
                                             return (
-                                              <span key={i}>{part}</span>
+                                              <span key={i} className="opacity-70">{part}</span>
                                             );
                                           }
                                           return part;
