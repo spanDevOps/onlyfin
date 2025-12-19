@@ -28,7 +28,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.25, maximum-scale=2.0, user-scalable=yes" />
       </head>
-      <body className={`${poppins.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${poppins.variable} antialiased`} style={{ fontFamily: 'Söhne, -apple-system, BlinkMacSystemFont, system-ui, var(--font-poppins), sans-serif' }}>{children}</body>
     </html>
   );
 }
