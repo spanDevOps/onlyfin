@@ -149,8 +149,8 @@ export async function hybridSearch(
   } catch (error) {
     logger.error('HYBRID_SEARCH_ERROR', 'Hybrid search failed', {
       query: query.substring(0, 100),
-      error: error.message,
-      stack: error.stack
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     });
     throw error;
   }
