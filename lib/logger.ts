@@ -15,15 +15,28 @@ interface LogEntry {
 class Logger {
   private logsDir: string;
   private logFileName: string;
+  private isServerless: boolean;
 
   constructor() {
+    // Detect serverless environment (Vercel, AWS Lambda, etc.)
+    this.isServerless = !!(
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      process.env.NETLIFY
+    );
+
     this.logsDir = join(process.cwd(), 'logs');
     // Create log file name once when logger is initialized (per server session)
     const now = new Date();
     const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const time = now.toISOString().split('T')[1].split('.')[0].replace(/:/g, '-'); // HH-MM-SS
     this.logFileName = `app-${date}_${time}.log`;
-    this.ensureLogsDir();
+    
+    // Only create logs directory if not in serverless environment
+    if (!this.isServerless) {
+      this.ensureLogsDir();
+    }
   }
 
   private ensureLogsDir() {
@@ -72,14 +85,16 @@ class Logger {
       console.log(formattedLog);
     }
 
-    // Write to file (synchronous for reliability)
-    try {
-      const logFile = join(this.logsDir, this.logFileName);
-      const logLine = formattedLog + '\n';
-      appendFileSync(logFile, logLine, 'utf-8');
-    } catch (error) {
-      // Don't log errors about logging to avoid infinite loops
-      console.error('Failed to write to log file:', error);
+    // Write to file (synchronous for reliability) - skip in serverless environments
+    if (!this.isServerless) {
+      try {
+        const logFile = join(this.logsDir, this.logFileName);
+        const logLine = formattedLog + '\n';
+        appendFileSync(logFile, logLine, 'utf-8');
+      } catch (error) {
+        // Don't log errors about logging to avoid infinite loops
+        console.error('Failed to write to log file:', error);
+      }
     }
   }
 
