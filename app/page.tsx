@@ -175,10 +175,13 @@ export default function Chat() {
   const CORNER_LOTTIE_COUNT = parseInt(process.env.NEXT_PUBLIC_CORNER_LOTTIE_COUNT || '2', 10);
   
   const cornerLottie = useRef<string | null>(null);
+  const cornerPosition = useRef<number | null>(null);
   
   if (!cornerLottie.current) {
     const randomNumber = Math.floor(Math.random() * CORNER_LOTTIE_COUNT) + 1; // 1 to CORNER_LOTTIE_COUNT
     cornerLottie.current = `${randomNumber}.lottie`;
+    // Random position between 20% and 80% from top
+    cornerPosition.current = 20 + Math.random() * 60;
   }
   
   // Initialize session and theme from localStorage
@@ -1337,8 +1340,11 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Random Corner Animation - Right Bottom */}
-      <div className="fixed bottom-0 right-0 z-50 pointer-events-none">
+      {/* Random Corner Animation - Right Edge (Random Vertical Position) */}
+      <div 
+        className="fixed right-0 z-50 pointer-events-none"
+        style={{ top: `${cornerPosition.current}%` }}
+      >
         <DotLottieReact
           src={`/corners/${cornerLottie.current}`}
           loop
