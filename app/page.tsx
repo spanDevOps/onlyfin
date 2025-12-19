@@ -186,7 +186,9 @@ export default function Chat() {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [toastExiting, setToastExiting] = useState(false);
   const [refreshKB, setRefreshKB] = useState(0);
+  const [autoCollapseAfterRefresh, setAutoCollapseAfterRefresh] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [suggestions, setSuggestions] = useState<Array<{ id: string; text: string; color: string; floatDuration: number; xOffset: number; yOffset: number; delay: number }>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -514,6 +516,23 @@ export default function Chat() {
 
   const isDark = theme === 'dark';
 
+  const handleKBLoadComplete = () => {
+    if (autoCollapseAfterRefresh) {
+      setTimeout(() => {
+        setKbExpanded(false);
+        setAutoCollapseAfterRefresh(false);
+      }, 1000);
+    }
+  };
+
+  const dismissToast = () => {
+    setToastExiting(true);
+    setTimeout(() => {
+      setToast(null);
+      setToastExiting(false);
+    }, 300); // Match animation duration
+  };
+
   const handleFileUpload = async (file: File) => {
     if (!sessionId) {
       console.error('No session ID available');
@@ -521,6 +540,9 @@ export default function Chat() {
     }
     
     setUploading(true);
+    setToast({ message: `Uploading ${file.name}...`, type: 'success' });
+    setTimeout(dismissToast, 3000);
+    
     const formData = new FormData();
     formData.append('file', file);
     try {
@@ -539,23 +561,21 @@ export default function Chat() {
       if (response.ok) {
         setToast({ message: `${file.name} uploaded successfully!`, type: 'success' });
         setRefreshKB(prev => prev + 1); // Trigger KB refresh
-        setTimeout(() => setToast(null), 3000);
+        setTimeout(dismissToast, 3000);
         
-        // If sidebar is collapsed, open it for 3 seconds then close
+        // If sidebar is collapsed, open it and set flag to auto-collapse after refresh
         if (!kbExpanded) {
           setKbExpanded(true);
-          setTimeout(() => {
-            setKbExpanded(false);
-          }, 3000);
+          setAutoCollapseAfterRefresh(true);
         }
       } else {
         setToast({ message: `Upload failed: ${data.error || 'Unknown error'}`, type: 'error' });
-        setTimeout(() => setToast(null), 5000);
+        setTimeout(dismissToast, 5000);
       }
     } catch (error) {
       console.error('Upload error:', error);
       setToast({ message: `Upload error: ${error instanceof Error ? error.message : 'Unknown error'}`, type: 'error' });
-      setTimeout(() => setToast(null), 5000);
+      setTimeout(dismissToast, 5000);
     } finally {
       setUploading(false);
     }
@@ -718,7 +738,7 @@ export default function Chat() {
             title="Upload to K-Base"
           />
 
-          <KBManager key={refreshKB} />
+          <KBManager key={refreshKB} onLoadComplete={handleKBLoadComplete} />
         </div>
       </div>
 
@@ -807,20 +827,20 @@ export default function Chat() {
                 />
               </a>
             </div>
-            <button
+            <div 
               onClick={toggleTheme}
-              className="p-1.5 rounded-lg transition-all duration-200 bg-gray-600/50 hover:bg-gray-700/50"
+              className="cursor-pointer flex items-center justify-center"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{ width: 28, height: 28 }}
             >
-              {isDark ? (
-                <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
+              <DotLottieReact
+                key={`theme-${theme}`}
+                src={isDark ? "/theme/dark.lottie" : "/theme/light.lottie"}
+                loop
+                autoplay
+                style={{ width: 28, height: 28 }}
+              />
+            </div>
           </div>
         </div>
 
@@ -1360,9 +1380,11 @@ export default function Chat() {
         />
       </div>
 
-      {/* Toast Notification - Positioned in header area with fade effect */}
+      {/* Toast Notification - Positioned in header area with slide animations */}
       {toast && (
-        <div className={`fixed top-0 left-1/2 -translate-x-1/2 z-[60] px-4 py-1.5 rounded-b-lg shadow-lg animate-toast ${
+        <div className={`fixed top-0 left-1/2 -translate-x-1/2 z-[60] px-4 py-1.5 rounded-b-lg shadow-lg ${
+          toastExiting ? 'animate-toast-out' : 'animate-toast-in'
+        } ${
           toast.type === 'success' 
             ? 'bg-purple-600 text-white' 
             : 'bg-red-500 text-white'

@@ -47,7 +47,7 @@ function getFileIcon(filename: string) {
   }
 }
 
-export default function KBManager() {
+export default function KBManager({ onLoadComplete }: { onLoadComplete?: () => void }) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -77,6 +77,10 @@ export default function KBManager() {
       console.error('Failed to load documents:', error);
     } finally {
       setLoading(false);
+      // Call the callback when loading is complete
+      if (onLoadComplete) {
+        onLoadComplete();
+      }
     }
   }
 
