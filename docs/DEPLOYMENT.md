@@ -26,13 +26,21 @@ git push -u origin main
 2. Click "Add New Project"
 3. Import your GitHub repository
 4. Vercel auto-detects Next.js
-5. Add environment variables:
+5. Add environment variables (initial deployment):
    - `OPENAI_API_KEY` (required)
-   - `OPENAI_MODEL` = `gpt-4.1-nano`
+   - `OPENAI_MODEL` = `gpt-4.1-mini`
    - `QDRANT_URL` (optional)
    - `QDRANT_API_KEY` (optional)
    - `QDRANT_COLLECTION` = `onlyfinance-kb` (optional)
+   - `TAVILY_API_KEY` (optional - for web search)
+   - `COHERE_API_KEY` (optional - for faster reranking)
+   - `RERANKER_TYPE` = `cohere` (optional - cohere/llm/heuristic)
+   - `NEXT_PUBLIC_CORNER_LOTTIE_COUNT` = `2` (optional)
 6. Click "Deploy"
+7. **After first deployment**: Add `NEXT_PUBLIC_APP_URL` environment variable:
+   - Go to Project Settings → Environment Variables
+   - Add `NEXT_PUBLIC_APP_URL` = `https://your-actual-app.vercel.app`
+   - Redeploy for location API to work
 
 ### Step 3: Verify Deployment
 
@@ -57,10 +65,15 @@ Open [http://localhost:3000](http://localhost:3000)
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `OPENAI_API_KEY` | Yes | OpenAI API key |
-| `OPENAI_MODEL` | No | Model name (default: gpt-4.1-nano) |
+| `OPENAI_MODEL` | No | Model name (default: gpt-4.1-mini) |
 | `QDRANT_URL` | No | Qdrant cluster URL |
 | `QDRANT_API_KEY` | No | Qdrant API key |
 | `QDRANT_COLLECTION` | No | Collection name (default: onlyfinance-kb) |
+| `TAVILY_API_KEY` | No | Tavily API key for web search |
+| `COHERE_API_KEY` | No | Cohere API key for faster reranking |
+| `RERANKER_TYPE` | No | Reranker type: cohere/llm/heuristic (default: cohere if key available) |
+| `NEXT_PUBLIC_APP_URL` | Yes* | Your app URL (for location API) - *Add after first deployment |
+| `NEXT_PUBLIC_CORNER_LOTTIE_COUNT` | No | Number of corner lotties (default: 2) |
 
 ## Post-Deployment Checklist
 

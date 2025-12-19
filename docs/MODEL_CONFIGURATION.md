@@ -2,25 +2,26 @@
 
 ## Current Configuration
 
-OnlyFin uses **OpenAI GPT-4.1-nano** for all operations.
+OnlyFin uses **OpenAI GPT-4.1-mini** for all operations.
 
 ## Environment Variables
 
 ```env
 # Model selection
-OPENAI_MODEL=gpt-4.1-nano
+OPENAI_MODEL=gpt-4.1-mini
 
 # API key
 OPENAI_API_KEY=your_key_here
 ```
 
-## Why GPT-4.1-nano?
+## Why GPT-4.1-mini?
 
 - **Fast**: < 1 second first token
 - **Reliable**: Excellent function calling support
 - **Cost-effective**: Low cost per token
 - **High quality**: Great for conversational AI
 - **Streaming**: Smooth real-time responses
+- **Superior tool calling**: Excellent for multi-tool scenarios
 
 ## Usage
 
@@ -35,7 +36,7 @@ The model is used for:
 Edit `app/api/chat/route.ts`:
 
 ```typescript
-const model = openai(process.env.OPENAI_MODEL || 'gpt-4.1-nano');
+const model = openai(process.env.OPENAI_MODEL || 'gpt-4.1-mini');
 ```
 
 ## Performance
@@ -56,7 +57,7 @@ Current setup is optimized:
 ## Troubleshooting
 
 ### Model not found
-- Verify API key has access to gpt-4.1-nano
+- Verify API key has access to gpt-4.1-mini
 - Check OPENAI_API_KEY is set correctly
 
 ### Slow responses

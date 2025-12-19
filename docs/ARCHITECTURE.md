@@ -2,7 +2,7 @@
 
 ## System Overview
 
-OnlyFin is a finance-focused AI chatbot with document upload, knowledge base search, and intelligent UI animations. Built with Next.js 14, OpenAI GPT-4.1-nano, and Qdrant vector database.
+OnlyFin is a finance-focused AI chatbot with document upload, knowledge base search, session-based user isolation, location-aware responses, and intelligent UI animations. Built with Next.js 14, OpenAI GPT-4.1-mini, and Qdrant vector database.
 
 ## Architecture Diagram
 
@@ -39,8 +39,13 @@ OnlyFin is a finance-focused AI chatbot with document upload, knowledge base sea
 │  └────────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  /api/kb - Knowledge base management                   │ │
-│  │  - List documents                                      │ │
-│  │  - Delete documents                                    │ │
+│  │  - List documents (filtered by session)               │ │
+│  │  - Delete documents (filtered by session)             │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  /api/location - User location detection              │ │
+│  │  - IP-based geolocation                               │ │
+│  │  - Returns country, city, timezone, currency          │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                             │
@@ -96,16 +101,22 @@ const msPerChar = 1000 / CPS;
 **Flow**:
 1. Receive user message
 2. Generate query embedding
-3. Search Qdrant for relevant documents
+3. Search Qdrant for relevant documents (hybrid search with reranking)
 4. Filter by validation score (>= 0.7) in-memory
 5. Build context with citations
 6. Stream LLM response with citations
 
 **Key Features**:
-- Uses `searchKnowledgeBase` tool for KB queries
+- Uses `searchKnowledgeBase` tool for KB queries (session-filtered)
+  - Hybrid search: vector similarity + keyword matching
+  - Cohere reranking (3-5x faster than LLM, more accurate)
+  - Automatic fallback: Cohere → LLM → Heuristic
+- Uses `getUserLocation` tool for location-aware responses
+- Uses `searchWeb` tool for current information (Tavily API)
 - Integrated topic guard (no separate call)
 - Citation formatting with validation scores
 - Streaming with Vercel AI SDK
+- Session ID passed via `x-session-id` header
 
 ### 3. Upload API (`app/api/upload/route.ts`)
 
@@ -128,12 +139,20 @@ const msPerChar = 1000 / CPS;
 - Collection: `onlyfinance-kb`
 - Dimensions: 1536 (OpenAI text-embedding-3-small)
 - Distance: Cosine similarity
-- Metadata: filename, fileType, uploadDate, chunkIndex, validationScore
+- Metadata: filename, fileType, uploadDate, chunkIndex, validationScore, **sessionId**
+- Payload indexes: filename, sessionId (for efficient filtering)
 
 **Search Strategy**:
 - Semantic search with top 5 results
+- **Session-based filtering** (users only see their own documents)
 - In-memory filtering by validationScore >= 0.7
 - Returns content, source, score, validationScore
+
+**Session Isolation**:
+- Each user gets unique session ID stored in localStorage
+- All operations (store, search, list, delete) filter by sessionId
+- Prevents cross-user data leakage
+- Session ID format: `user_{timestamp}_{random}`
 
 ### 5. Document Processing
 
@@ -220,9 +239,29 @@ Update KB UI
 **Result**: Single API call, natural language handling
 
 ### 4. Model Selection
-**Decision**: GPT-4.1-nano for all operations
-**Rationale**: Fast, reliable, cost-effective, excellent quality
+**Decision**: GPT-4.1-mini for all operations
+**Rationale**: Fast, reliable, excellent tool calling, cost-effective
 **Result**: < 1s first token, smooth streaming
+
+### 5. Session-Based Isolation
+**Problem**: Multiple evaluators would see each other's uploaded documents
+**Solution**: Generate unique session ID per browser, filter all KB operations
+**Result**: Complete user isolation without authentication system
+
+### 6. Location Detection
+**Problem**: Need location context for tailored financial advice
+**Solution**: IP-based geolocation via ipapi.co, exposed as LLM tool
+**Result**: LLM can provide location-specific advice (taxes, currency, regulations)
+
+### 7. Reranking Strategy
+**Problem**: LLM-based reranking is slow (1-2s) and expensive
+**Solution**: Use Cohere's specialized rerank-english-v3.0 API with fallback chain
+**Result**: 3-5x faster (100-200ms), more accurate, graceful degradation
+
+### 8. Web Search Integration
+**Problem**: Need current financial information (rates, news, market data)
+**Solution**: Tavily API for web search, exposed as LLM tool
+**Result**: LLM can supplement KB with real-time information
 
 ## Performance Characteristics
 

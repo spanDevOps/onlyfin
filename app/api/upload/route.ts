@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         throw new KBError(
           'Text extraction failed',
           ErrorCode.EXTRACTION_FAILED,
-          { filename, error: error.message },
+          { filename, error: error instanceof Error ? error.message : 'Unknown error' },
           true
         );
       }
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         throw new KBError(
           'Chunking failed',
           ErrorCode.CHUNKING_FAILED,
-          { filename, error: error.message },
+          { filename, error: error instanceof Error ? error.message : 'Unknown error' },
           true
         );
       }
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
         } catch (error) {
           logger.warn('VALIDATION_ERROR', `Chunk validation failed, using default`, {
             filename,
-            error: error.message
+            error: error instanceof Error ? error.message : 'Unknown error'
           });
           // Return default validation on error
           return {

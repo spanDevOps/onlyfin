@@ -23,12 +23,27 @@ Create `.env.local` in project root:
 ```env
 # Required: OpenAI API
 OPENAI_API_KEY=sk-proj-your-key-here
-OPENAI_MODEL=gpt-4.1-nano
+OPENAI_MODEL=gpt-4.1-mini
 
 # Optional: Qdrant for document upload
 QDRANT_URL=https://your-cluster.us-east-1-1.aws.cloud.qdrant.io
 QDRANT_API_KEY=your-qdrant-api-key
 QDRANT_COLLECTION=onlyfinance-kb
+
+# Optional: Web search
+TAVILY_API_KEY=your-tavily-key
+
+# Optional: Cohere reranking (faster, more accurate than LLM reranking)
+COHERE_API_KEY=your-cohere-key
+RERANKER_TYPE=cohere  # Options: cohere, llm, heuristic (default: cohere if key available)
+
+# Required for production: App URL (for location API)
+# For local development, use localhost
+# For production, add this to Vercel AFTER first deployment with your actual URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Optional: UI configuration
+NEXT_PUBLIC_CORNER_LOTTIE_COUNT=2
 ```
 
 ### 3. Run Development Server
