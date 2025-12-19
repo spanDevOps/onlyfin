@@ -820,7 +820,7 @@ export default function Chat() {
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 relative">
           <div className="max-w-4xl mx-auto space-y-3 relative z-20">
             {messages.length === 0 && (
-              <div className="text-center py-16">
+              <div className="text-center py-24">
                 <h2 className={`text-4xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4 tracking-widest`}>Hi! I'm OnlyFin.</h2>
 <p className={`text-sm ${isDark ? 'text-gray-100' : 'text-gray-800'} mb-10 min-h-[3rem] text-left max-w-2xl mx-auto tracking-widest`}>{typedText}<span style={{ animation: 'cursor-blink 0.8s infinite' }}>|</span></p>
                 
