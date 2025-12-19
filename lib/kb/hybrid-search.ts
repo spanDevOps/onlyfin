@@ -19,7 +19,8 @@ export interface HybridSearchResult extends RerankResult {
  */
 export async function hybridSearch(
   query: string,
-  options: HybridSearchOptions = {}
+  options: HybridSearchOptions = {},
+  sessionId?: string
 ): Promise<HybridSearchResult[]> {
   const startTime = Date.now();
   const {
@@ -44,7 +45,7 @@ export async function hybridSearch(
     logger.debug('HYBRID_SEARCH_EMBEDDING', `Generated embedding in ${Date.now() - embeddingStart}ms`);
     
     const vectorSearchStart = Date.now();
-    const vectorResults = await searchKB(queryEmbedding, topK * 2); // Get more for reranking
+    const vectorResults = await searchKB(queryEmbedding, topK * 2, sessionId); // Get more for reranking
     logger.info('HYBRID_SEARCH_VECTOR', `Vector search returned ${vectorResults.length} results in ${Date.now() - vectorSearchStart}ms`, {
       resultCount: vectorResults.length,
       avgScore: vectorResults.length > 0 

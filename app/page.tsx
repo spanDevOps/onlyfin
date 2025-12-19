@@ -134,6 +134,7 @@ const getCardBackground = (textColor: string, isDark: boolean) => {
 export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [sessionId, setSessionId] = useState<string>('');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [kbExpanded, setKbExpanded] = useState<boolean>(false);
@@ -179,6 +180,18 @@ export default function Chat() {
     const randomNumber = Math.floor(Math.random() * CORNER_LOTTIE_COUNT) + 1; // 1 to CORNER_LOTTIE_COUNT
     cornerLottie.current = `${randomNumber}.lottie`;
   }
+  
+  // Initialize session and theme from localStorage
+  useEffect(() => {
+    // Import session utilities dynamically (client-side only)
+    import('@/lib/session').then(({ getOrCreateSessionId, getTheme }) => {
+      const sid = getOrCreateSessionId();
+      setSessionId(sid);
+      
+      const savedTheme = getTheme();
+      setTheme(savedTheme);
+    });
+  }, []);
   
   // Typing effect for welcome message with smart delays
   useEffect(() => {
@@ -266,7 +279,11 @@ export default function Chat() {
     }))
   ).current;
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, stop } = useChat();
+  const { messages, input, handleInputChange, handleSubmit, isLoading, stop } = useChat({
+    headers: sessionId ? {
+      'x-session-id': sessionId,
+    } : undefined,
+  });
 
   // Check if currently animating
   const isAnimating = animatingId !== null;
@@ -443,12 +460,22 @@ export default function Chat() {
   }, []);
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    // Save to localStorage
+    import('@/lib/session').then(({ setTheme: saveTheme }) => {
+      saveTheme(newTheme);
+    });
   };
 
   const isDark = theme === 'dark';
 
   const handleFileUpload = async (file: File) => {
+    if (!sessionId) {
+      console.error('No session ID available');
+      return;
+    }
+    
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -456,6 +483,9 @@ export default function Chat() {
       console.log('Uploading file:', file.name, file.size, file.type);
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers: {
+          'x-session-id': sessionId,
+        },
         body: formData,
       });
       console.log('Upload response status:', response.status);
@@ -594,9 +624,9 @@ export default function Chat() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">K-Base</h2>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => setRefreshKB(prev => prev + 1)}
               className="p-1.5 rounded-lg hover:bg-gray-700/50 transition-colors"
-              title="Refresh"
+              title="Refresh K-Base"
             >
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

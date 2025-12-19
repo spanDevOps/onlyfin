@@ -25,6 +25,7 @@ export interface KBChunk {
     uploadDate: string;
     chunkIndex: number;
     validationScore: number;
+    sessionId: string; // User session ID for isolation
   };
 }
 
@@ -78,13 +79,14 @@ async function ensureCollection() {
 /**
  * Store document chunks in Qdrant
  */
-export async function storeChunks(chunks: KBChunk[], embeddings: number[][]) {
+export async function storeChunks(chunks: KBChunk[], embeddings: number[][], sessionId: string) {
   const startTime = Date.now();
   
   logger.info('VECTOR_DB_STORE_START', 'Storing chunks in Qdrant', {
     chunkCount: chunks.length,
     embeddingCount: embeddings.length,
-    filename: chunks[0]?.metadata.filename
+    filename: chunks[0]?.metadata.filename,
+    sessionId
   });
   
   const client = getQdrantClient();
@@ -100,6 +102,7 @@ export async function storeChunks(chunks: KBChunk[], embeddings: number[][]) {
       uploadDate: chunk.metadata.uploadDate,
       chunkIndex: chunk.metadata.chunkIndex,
       validationScore: chunk.metadata.validationScore,
+      sessionId: sessionId, // Store session ID for filtering
       originalId: chunk.id,
     },
   }));
@@ -124,11 +127,12 @@ export async function storeChunks(chunks: KBChunk[], embeddings: number[][]) {
 }
 
 /**
- * Search knowledge base for relevant chunks
+ * Search knowledge base for relevant chunks (filtered by session)
  */
 export async function searchKB(
   queryEmbedding: number[], 
-  topK: number = 5
+  topK: number = 5,
+  sessionId?: string
 ): Promise<KBSearchResult[]> {
   const startTime = Date.now();
   
@@ -154,11 +158,26 @@ export async function searchKB(
     }
     
     const searchStart = Date.now();
-    const results = await client.search(COLLECTION_NAME, {
+    const searchParams: any = {
       vector: queryEmbedding,
       limit: topK,
       with_payload: true,
-    });
+    };
+    
+    // Filter by sessionId if provided
+    if (sessionId) {
+      searchParams.filter = {
+        must: [
+          {
+            key: 'sessionId',
+            match: { value: sessionId }
+          }
+        ]
+      };
+      logger.debug('VECTOR_DB_SEARCH_FILTER', 'Filtering by sessionId', { sessionId });
+    }
+    
+    const results = await client.search(COLLECTION_NAME, searchParams);
     
     logger.debug('VECTOR_DB_SEARCH_RAW', `Vector search returned ${results.length} results in ${Date.now() - searchStart}ms`, {
       resultCount: results.length,
@@ -210,7 +229,7 @@ export async function searchKB(
 }
 
 /**
- * Ensure payload index exists for filename field
+ * Ensure payload index exists for filename and sessionId fields
  */
 async function ensurePayloadIndex() {
   const client = getQdrantClient();
@@ -225,19 +244,34 @@ async function ensurePayloadIndex() {
   } catch (error: any) {
     // Index might already exist, which is fine
     if (!error.message?.includes('already exists')) {
-      logger.debug('VECTOR_DB_INDEX_EXISTS', 'Payload index already exists or creation skipped');
+      logger.debug('VECTOR_DB_INDEX_EXISTS', 'Payload index for filename already exists or creation skipped');
+    }
+  }
+  
+  try {
+    // Create payload index for sessionId field (keyword type for exact matches)
+    await client.createPayloadIndex(COLLECTION_NAME, {
+      field_name: 'sessionId',
+      field_schema: 'keyword',
+    });
+    logger.debug('VECTOR_DB_INDEX_CREATED', 'Created payload index for sessionId field');
+  } catch (error: any) {
+    // Index might already exist, which is fine
+    if (!error.message?.includes('already exists')) {
+      logger.debug('VECTOR_DB_INDEX_EXISTS', 'Payload index for sessionId already exists or creation skipped');
     }
   }
 }
 
 /**
- * Delete all chunks from a document
+ * Delete all chunks from a document (filtered by session)
  */
-export async function deleteDocument(filename: string) {
+export async function deleteDocument(filename: string, sessionId: string) {
   const startTime = Date.now();
   
   logger.info('VECTOR_DB_DELETE_START', 'Deleting document chunks', {
-    filename
+    filename,
+    sessionId
   });
   
   const client = getQdrantClient();
@@ -257,6 +291,12 @@ export async function deleteDocument(filename: string) {
             key: 'filename',
             match: {
               value: filename,
+            },
+          },
+          {
+            key: 'sessionId',
+            match: {
+              value: sessionId,
             },
           },
         ],
@@ -284,6 +324,12 @@ export async function deleteDocument(filename: string) {
               key: 'filename',
               match: {
                 value: filename,
+              },
+            },
+            {
+              key: 'sessionId',
+              match: {
+                value: sessionId,
               },
             },
           ],
@@ -334,24 +380,40 @@ export async function deleteDocument(filename: string) {
 }
 
 /**
- * List all documents in the knowledge base with metadata
+ * List all documents in the knowledge base with metadata (filtered by session)
  */
-export async function listDocuments() {
+export async function listDocuments(sessionId?: string) {
   const startTime = Date.now();
   
-  logger.info('VECTOR_DB_LIST_START', 'Listing all documents');
+  logger.info('VECTOR_DB_LIST_START', 'Listing all documents', { sessionId });
   
   try {
     const client = getQdrantClient();
     await ensureCollection();
+    await ensurePayloadIndex(); // Ensure indexes exist before filtering
     
     // Scroll through all points to get unique documents
     const scrollStart = Date.now();
-    const scrollResult = await client.scroll(COLLECTION_NAME, {
+    const scrollParams: any = {
       limit: 1000,
       with_payload: true,
       with_vector: false,
-    });
+    };
+    
+    // Filter by sessionId if provided
+    if (sessionId) {
+      scrollParams.filter = {
+        must: [
+          {
+            key: 'sessionId',
+            match: { value: sessionId }
+          }
+        ]
+      };
+      logger.debug('VECTOR_DB_LIST_FILTER', 'Filtering by sessionId', { sessionId });
+    }
+    
+    const scrollResult = await client.scroll(COLLECTION_NAME, scrollParams);
     
     logger.debug('VECTOR_DB_SCROLL_COMPLETE', `Scrolled ${scrollResult.points.length} points in ${Date.now() - scrollStart}ms`, {
       pointCount: scrollResult.points.length,

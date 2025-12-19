@@ -167,6 +167,9 @@ Remember: Be brief, be Socratic, be helpful!`;
 export async function POST(req: Request) {
   const startTime = Date.now();
   
+  // Get sessionId from header
+  const sessionId = req.headers.get('x-session-id');
+  
   // Clean up old logs on every request
   cleanupOldLogs();
   
@@ -223,7 +226,7 @@ export async function POST(req: Request) {
                 useReranking,
                 minValidationScore: 0.7,
                 diversityBoost: true
-              });
+              }, sessionId || undefined);
               
               logger.info('TOOL_KB_SEARCH_RESULT', `Found ${results.length} documents`, {
                 query: query.substring(0, 100),

@@ -13,6 +13,12 @@ export async function POST(req: NextRequest) {
   let filename = 'unknown';
   
   try {
+    // Get sessionId from header
+    const sessionId = req.headers.get('x-session-id');
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
+    }
+    
     const formData = await req.formData();
     const file = formData.get('file') as File;
     
@@ -155,11 +161,12 @@ export async function POST(req: NextRequest) {
         fileType: fileType!,
         uploadDate: new Date().toISOString(),
         chunkIndex: i,
-        validationScore: item.validation.confidence
+        validationScore: item.validation.confidence,
+        sessionId: sessionId // Add session ID for user isolation
       }
     }));
     
-    await storeChunks(kbChunks, embeddings);
+    await storeChunks(kbChunks, embeddings, sessionId);
     
     logger.info('DOCUMENT_UPLOADED', `Document ${file.name} successfully processed and stored`, {
       filename: file.name,

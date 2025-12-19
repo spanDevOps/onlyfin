@@ -51,11 +51,26 @@ export default function KBManager() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
+
+  // Get session ID on mount
+  useEffect(() => {
+    import('@/lib/session').then(({ getOrCreateSessionId }) => {
+      const sid = getOrCreateSessionId();
+      setSessionId(sid);
+    });
+  }, []);
 
   async function loadDocuments() {
+    if (!sessionId) return;
+    
     setLoading(true);
     try {
-      const response = await fetch('/api/kb');
+      const response = await fetch('/api/kb', {
+        headers: {
+          'x-session-id': sessionId,
+        },
+      });
       const data = await response.json();
       setDocuments(data.documents || []);
     } catch (error) {
@@ -67,12 +82,16 @@ export default function KBManager() {
 
   async function deleteDocument(filename: string) {
     if (!confirm(`Delete ${filename}?`)) return;
+    if (!sessionId) return;
     
     setDeleting(filename);
     try {
       const response = await fetch('/api/kb', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-session-id': sessionId,
+        },
         body: JSON.stringify({ filename })
       });
       
@@ -87,8 +106,10 @@ export default function KBManager() {
   }
 
   useEffect(() => {
-    loadDocuments();
-  }, []);
+    if (sessionId) {
+      loadDocuments();
+    }
+  }, [sessionId]);
 
   if (loading && documents.length === 0) {
     return (

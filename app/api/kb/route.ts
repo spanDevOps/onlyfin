@@ -5,14 +5,20 @@ import { logger } from '@/lib/logger';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/kb - List all documents in knowledge base
+ * GET /api/kb - List all documents in knowledge base (filtered by session)
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    // Get sessionId from header
+    const sessionId = req.headers.get('x-session-id');
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
+    }
+    
     logger.info('KB_LIST', 'Listing knowledge base documents');
     
     const { listDocuments } = await import('@/lib/kb/vector-db');
-    const docs = await listDocuments();
+    const docs = await listDocuments(sessionId);
     
     // Transform to match frontend interface
     const documents = docs.map(doc => ({
@@ -35,10 +41,16 @@ export async function GET() {
 }
 
 /**
- * DELETE /api/kb - Delete a document from knowledge base
+ * DELETE /api/kb - Delete a document from knowledge base (filtered by session)
  */
 export async function DELETE(req: Request) {
   try {
+    // Get sessionId from header
+    const sessionId = req.headers.get('x-session-id');
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
+    }
+    
     const { filename } = await req.json();
     
     if (!filename) {
@@ -49,7 +61,7 @@ export async function DELETE(req: Request) {
     
     logger.info('KB_DELETE', `Deleting document: ${filename}`);
     
-    await deleteDocument(filename);
+    await deleteDocument(filename, sessionId);
     
     logger.info('KB_DELETE_SUCCESS', `Document deleted: ${filename}`);
     
