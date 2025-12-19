@@ -795,7 +795,7 @@ export default function Chat() {
                   src="/onlyf-icon.lottie"
                   loop
                   autoplay
-                  style={{ width: 28, height: 28 }}
+                  style={{ width: 17, height: 17 }}
                 />
               </a>
             </div>
