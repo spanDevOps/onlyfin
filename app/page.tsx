@@ -1133,7 +1133,7 @@ export default function Chat() {
                         </div>
                       )}
                     </div>
-                    {message.role === 'assistant' && getAssistantText(message, index).trim() && (
+                    {message.role === 'assistant' && getAssistantText(message, index).trim() && !isAnimating && suggestions.length === 0 && (
                       <div className="flex items-center gap-2 mt-0.5 ml-4">
                         <button
                           onClick={() => copyToClipboard(getAssistantText(message, index), message.id)}
