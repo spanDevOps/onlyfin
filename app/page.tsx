@@ -835,22 +835,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[0]}`,
-                        color: getOptimalTextColor(presetColors.current[0], isDark),
-                        borderColor: `#${presetColors.current[0]}`,
-                        animation: `float-0 ${presetAnimations.current[0].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       How to budget expenses?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-0 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[0].xOffset}px, ${presetAnimations.current[0].yOffset}px); }
-                      }
-                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "What are the best investment options for beginners?" } } as any);
@@ -859,22 +853,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[1]}`,
-                        color: getOptimalTextColor(presetColors.current[1], isDark),
-                        borderColor: `#${presetColors.current[1]}`,
-                        animation: `float-1 ${presetAnimations.current[1].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Best investments for beginners?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-1 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[1].xOffset}px, ${presetAnimations.current[1].yOffset}px); }
-                      }
-                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How can I improve my credit score?" } } as any);
@@ -883,22 +871,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[2]}`,
-                        color: getOptimalTextColor(presetColors.current[2], isDark),
-                        borderColor: `#${presetColors.current[2]}`,
-                        animation: `float-2 ${presetAnimations.current[2].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Improve credit score?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-2 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[2].xOffset}px, ${presetAnimations.current[2].yOffset}px); }
-                      }
-                    `}</style>
                   </div>
                   
                   {/* Row 2: 2 cards */}
@@ -911,22 +893,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[3]}`,
-                        color: getOptimalTextColor(presetColors.current[3], isDark),
-                        borderColor: `#${presetColors.current[3]}`,
-                        animation: `float-3 ${presetAnimations.current[3].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Stocks vs bonds?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-3 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[3].xOffset}px, ${presetAnimations.current[3].yOffset}px); }
-                      }
-                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How much should I save for retirement?" } } as any);
@@ -935,22 +911,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[4]}`,
-                        color: getOptimalTextColor(presetColors.current[4], isDark),
-                        borderColor: `#${presetColors.current[4]}`,
-                        animation: `float-4 ${presetAnimations.current[4].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Retirement savings?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-4 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[4].xOffset}px, ${presetAnimations.current[4].yOffset}px); }
-                      }
-                    `}</style>
                   </div>
                   
                   {/* Row 3: 3 cards */}
@@ -963,22 +933,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[5]}`,
-                        color: getOptimalTextColor(presetColors.current[5], isDark),
-                        borderColor: `#${presetColors.current[5]}`,
-                        animation: `float-5 ${presetAnimations.current[5].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Tax deductions?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-5 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[5].xOffset}px, ${presetAnimations.current[5].yOffset}px); }
-                      }
-                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "Should I pay off debt or invest?" } } as any);
@@ -987,22 +951,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[6]}`,
-                        color: getOptimalTextColor(presetColors.current[6], isDark),
-                        borderColor: `#${presetColors.current[6]}`,
-                        animation: `float-6 ${presetAnimations.current[6].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Pay debt or invest?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-6 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[6].xOffset}px, ${presetAnimations.current[6].yOffset}px); }
-                      }
-                    `}</style>
                     <button
                       onClick={() => {
                         handleInputChange({ target: { value: "How do I start building an emergency fund?" } } as any);
@@ -1011,22 +969,16 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: `#${presetColors.current[7]}`,
-                        color: getOptimalTextColor(presetColors.current[7], isDark),
-                        borderColor: `#${presetColors.current[7]}`,
-                        animation: `float-7 ${presetAnimations.current[7].duration}s ease-in-out infinite`,
+                        backgroundColor: 'transparent',
+                        color: '#9333ea',
+                        borderColor: '#9333ea',
+                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
                       }}
                     >
                       Emergency fund tips?
                     </button>
-                    <style jsx>{`
-                      @keyframes float-7 {
-                        0%, 100% { transform: translate(0, 0); }
-                        50% { transform: translate(${presetAnimations.current[7].xOffset}px, ${presetAnimations.current[7].yOffset}px); }
-                      }
-                    `}</style>
                   </div>
                 </div>
               </div>
@@ -1232,12 +1184,13 @@ export default function Chat() {
                               if (form) form.requestSubmit();
                             }, 50);
                           }}
-                          className="px-2.5 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
+                          className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
                           style={{
-                            backgroundColor: `#${suggestion.color}`,
-                            color: getOptimalTextColor(suggestion.color, isDark),
-                            borderColor: `#${suggestion.color}`,
-                            animation: `fadeInFloat-${index} 0.5s ease-out ${suggestion.delay}s both, float-suggestion-${index} ${suggestion.floatDuration}s ease-in-out infinite ${suggestion.delay}s`,
+                            backgroundColor: 'transparent',
+                            color: '#9333ea',
+                            borderColor: '#9333ea',
+                            boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
+                            animation: `fadeInFloat-${index} 0.5s ease-out ${suggestion.delay}s both`,
                           }}
                         >
                           {suggestion.text}
@@ -1250,10 +1203,6 @@ export default function Chat() {
                             to {
                               opacity: 1;
                             }
-                          }
-                          @keyframes float-suggestion-${index} {
-                            0%, 100% { transform: translate(0, 0); }
-                            50% { transform: translate(${suggestion.xOffset}px, ${suggestion.yOffset}px); }
                           }
                         `}</style>
                       </React.Fragment>
@@ -1321,11 +1270,21 @@ export default function Chat() {
           )}
           <form onSubmit={(e) => {
             e.preventDefault();
+            const trimmedInput = input.trim();
+            // Don't submit if input is empty or only whitespace
+            if (!trimmedInput) {
+              return;
+            }
+            // Update input to trimmed version before submitting
+            handleInputChange({ target: { value: trimmedInput } } as any);
             setSuggestions([]); // Clear suggestions when user sends a message
-            handleSubmit(e);
-            requestAnimationFrame(() => {
-              inputRef.current?.focus();
-            });
+            // Use setTimeout to ensure the trimmed value is set before submitting
+            setTimeout(() => {
+              handleSubmit(e);
+              requestAnimationFrame(() => {
+                inputRef.current?.focus();
+              });
+            }, 0);
           }} className="max-w-2xl mx-auto">
             <div className="flex gap-3 items-center">
               {/* Upload Button */}
