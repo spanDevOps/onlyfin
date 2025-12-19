@@ -989,13 +989,7 @@ export default function Chat() {
                 <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] ${message.role === 'user' ? 'animate-slide-brake' : ''}`}>
                     <div 
-                      className={`${message.role === 'user' ? 'rounded-l-2xl px-4 py-1 shadow-sm' : 'px-4 py-2'}`} 
-                      style={message.role === 'user' ? { 
-                        background: isDark ? 'linear-gradient(to right, #5f268c, transparent)' : 'linear-gradient(to right, #5f268c, transparent)',
-                        backgroundImage: isDark 
-                          ? 'linear-gradient(to right, #5f268c 0%, rgba(13, 17, 23, 0) 100%)'
-                          : 'linear-gradient(to right, #5f268c 0%, rgba(197, 199, 202, 0) 100%)'
-                      } : {}}
+                      className={`${message.role === 'user' ? 'px-4 py-1' : 'px-4 py-2'}`}
                     >
                       {message.role === 'assistant' ? (
                         <>
