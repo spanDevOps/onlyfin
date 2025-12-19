@@ -90,6 +90,49 @@ const getContrastRatio = (lum1: number, lum2: number) => {
   return (lighter + 0.05) / (darker + 0.05);
 };
 
+// Get optimal text color (white or black hue) based on background color
+const getOptimalTextColor = (bgColor: string, isDark: boolean) => {
+  const bgRgb = hexToRgb(bgColor);
+  const bgLum = getLuminance(bgRgb.r, bgRgb.g, bgRgb.b);
+  
+  // White hues for dark backgrounds
+  const whiteHues = [
+    '#ffffff', // Pure white
+    '#f5f5f5', // Very light gray
+    '#e8e8e8', // Light gray
+    '#d4d4d4', // Medium-light gray
+  ];
+  
+  // Black hues for light backgrounds
+  const blackHues = [
+    '#000000', // Pure black
+    '#1a1a1a', // Very dark gray
+    '#2d2d2d', // Dark gray
+    '#404040', // Medium-dark gray
+  ];
+  
+  // Determine if background is light or dark
+  const isLightBg = bgLum > 0.5;
+  const candidates = isLightBg ? blackHues : whiteHues;
+  
+  // Find the candidate with best contrast (minimum 4.5:1 for WCAG AA)
+  let bestColor = candidates[0];
+  let bestContrast = 0;
+  
+  for (const color of candidates) {
+    const colorRgb = hexToRgb(color);
+    const colorLum = getLuminance(colorRgb.r, colorRgb.g, colorRgb.b);
+    const contrast = getContrastRatio(bgLum, colorLum);
+    
+    if (contrast > bestContrast) {
+      bestContrast = contrast;
+      bestColor = color;
+    }
+  }
+  
+  return bestColor;
+};
+
 // Get optimal background color based on text color and theme background
 const getCardBackground = (textColor: string, isDark: boolean) => {
   const textRgb = hexToRgb(textColor);
@@ -792,11 +835,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[0], isDark),
-                        color: `#${presetColors.current[0]}`,
-                        borderColor: `#${presetColors.current[0]}40`,
+                        backgroundColor: `#${presetColors.current[0]}`,
+                        color: getOptimalTextColor(presetColors.current[0], isDark),
+                        borderColor: `#${presetColors.current[0]}`,
                         animation: `float-0 ${presetAnimations.current[0].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -816,11 +859,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[1], isDark),
-                        color: `#${presetColors.current[1]}`,
-                        borderColor: `#${presetColors.current[1]}40`,
+                        backgroundColor: `#${presetColors.current[1]}`,
+                        color: getOptimalTextColor(presetColors.current[1], isDark),
+                        borderColor: `#${presetColors.current[1]}`,
                         animation: `float-1 ${presetAnimations.current[1].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -840,11 +883,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[2], isDark),
-                        color: `#${presetColors.current[2]}`,
-                        borderColor: `#${presetColors.current[2]}40`,
+                        backgroundColor: `#${presetColors.current[2]}`,
+                        color: getOptimalTextColor(presetColors.current[2], isDark),
+                        borderColor: `#${presetColors.current[2]}`,
                         animation: `float-2 ${presetAnimations.current[2].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -868,11 +911,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[3], isDark),
-                        color: `#${presetColors.current[3]}`,
-                        borderColor: `#${presetColors.current[3]}40`,
+                        backgroundColor: `#${presetColors.current[3]}`,
+                        color: getOptimalTextColor(presetColors.current[3], isDark),
+                        borderColor: `#${presetColors.current[3]}`,
                         animation: `float-3 ${presetAnimations.current[3].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -892,11 +935,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[4], isDark),
-                        color: `#${presetColors.current[4]}`,
-                        borderColor: `#${presetColors.current[4]}40`,
+                        backgroundColor: `#${presetColors.current[4]}`,
+                        color: getOptimalTextColor(presetColors.current[4], isDark),
+                        borderColor: `#${presetColors.current[4]}`,
                         animation: `float-4 ${presetAnimations.current[4].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -920,11 +963,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[5], isDark),
-                        color: `#${presetColors.current[5]}`,
-                        borderColor: `#${presetColors.current[5]}40`,
+                        backgroundColor: `#${presetColors.current[5]}`,
+                        color: getOptimalTextColor(presetColors.current[5], isDark),
+                        borderColor: `#${presetColors.current[5]}`,
                         animation: `float-5 ${presetAnimations.current[5].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -944,11 +987,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[6], isDark),
-                        color: `#${presetColors.current[6]}`,
-                        borderColor: `#${presetColors.current[6]}40`,
+                        backgroundColor: `#${presetColors.current[6]}`,
+                        color: getOptimalTextColor(presetColors.current[6], isDark),
+                        borderColor: `#${presetColors.current[6]}`,
                         animation: `float-6 ${presetAnimations.current[6].duration}s ease-in-out infinite`,
                       }}
                     >
@@ -968,11 +1011,11 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-xs tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-medium antialiased"
+                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
-                        backgroundColor: getCardBackground(presetColors.current[7], isDark),
-                        color: `#${presetColors.current[7]}`,
-                        borderColor: `#${presetColors.current[7]}40`,
+                        backgroundColor: `#${presetColors.current[7]}`,
+                        color: getOptimalTextColor(presetColors.current[7], isDark),
+                        borderColor: `#${presetColors.current[7]}`,
                         animation: `float-7 ${presetAnimations.current[7].duration}s ease-in-out infinite`,
                       }}
                     >
