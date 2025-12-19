@@ -1028,11 +1028,6 @@ export default function Chat() {
                                     {tool.toolName === 'searchWeb' && 'Searching the web...'}
                                     {tool.toolName === 'getUserLocation' && 'Getting your location...'}
                                   </span>
-                                  {tool.state === 'result' && tool.result?.results?.length > 0 && (
-                                    <span className="opacity-70">
-                                      Found {tool.result.results.length} {tool.toolName === 'searchWeb' ? 'web result(s)' : 'document(s)'}
-                                    </span>
-                                  )}
                                   {tool.state === 'result' && tool.toolName === 'getUserLocation' && tool.result?.location && (
                                     <span className="opacity-70">
                                       {tool.result.location.city}, {tool.result.location.country}
