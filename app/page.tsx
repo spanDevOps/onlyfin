@@ -835,7 +835,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -853,7 +853,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -871,7 +871,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -893,7 +893,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -911,7 +911,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -933,7 +933,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -951,7 +951,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -969,7 +969,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: 'transparent',
                         color: '#9333ea',
@@ -1184,7 +1184,7 @@ export default function Chat() {
                               if (form) form.requestSubmit();
                             }, 50);
                           }}
-                          className="px-4 py-2 text-sm tracking-wide border-2 rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
+                          className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
                           style={{
                             backgroundColor: 'transparent',
                             color: '#9333ea',
