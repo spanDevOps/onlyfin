@@ -52,6 +52,24 @@ body {
   animation: slide-brake 0.7s cubic-bezier(0.11, 0.77, 0.29, 0.98) forwards;
 }
 
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+  }
+  100% {
+    opacity: 1;
+    max-height: 500px;
+    margin-top: 1rem;
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.4s ease-out forwards;
+  overflow: hidden;
+}
+
 /* Prevent text blur during floating animations */
 button, .floating-card {
   -webkit-font-smoothing: antialiased;

@@ -1172,7 +1172,7 @@ export default function Chat() {
 
             {/* Suggestion Cards */}
             {!isLoading && !isAnimating && suggestions.length > 0 && messages.length > 0 && (
-              <div className="flex justify-start mt-4">
+              <div className="flex justify-start mt-4 animate-slideDown">
                 <div className="max-w-[85%]">
                   <div className="flex flex-wrap gap-6 ml-4">
                     {suggestions.map((suggestion, index) => (
