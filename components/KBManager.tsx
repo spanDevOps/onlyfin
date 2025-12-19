@@ -123,17 +123,16 @@ export default function KBManager() {
             <p className="text-sm font-medium text-white truncate">
               {doc.filename}
             </p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-gray-400">
+            <div className="flex items-center justify-between mt-1 flex-wrap">
+              <span className="text-[10px] text-gray-400 whitespace-nowrap">
                 {new Date(doc.uploadDate).toLocaleDateString('en-US', { 
                   month: 'short', 
                   day: 'numeric',
                   year: 'numeric'
                 })}
               </span>
-              <span className="text-[10px] text-gray-500">•</span>
               <span
-                className={`text-[10px] ${
+                className={`text-[10px] whitespace-nowrap ${
                   doc.avgValidation >= 0.9
                     ? 'text-green-400'
                     : doc.avgValidation >= 0.7
@@ -141,7 +140,7 @@ export default function KBManager() {
                     : 'text-red-400'
                 }`}
               >
-                {doc.avgValidation >= 0.9 ? 'High Quality' : doc.avgValidation >= 0.7 ? 'Acceptable Quality' : 'Insufficient Quality'}
+                {doc.avgValidation >= 0.9 ? 'High Relevance' : doc.avgValidation >= 0.7 ? 'Acceptable Relevance' : 'Low Relevance'}
               </span>
             </div>
           </div>

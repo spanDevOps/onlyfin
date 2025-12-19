@@ -479,23 +479,45 @@ export default function Chat() {
     }
   };
 
+  const dragCounter = useRef(0);
+
   const handleDrag = (e: React.DragEvent) => {
+    console.log('[DRAG EVENT]', e.type, 'at', e.currentTarget);
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
+    
+    if (e.type === 'dragenter') {
+      dragCounter.current++;
+      console.log('[DRAG] dragenter - counter:', dragCounter.current);
+      if (dragCounter.current === 1) {
+        console.log('[DRAG] Setting dragActive to TRUE');
+        setDragActive(true);
+      }
     } else if (e.type === 'dragleave') {
-      setDragActive(false);
+      dragCounter.current--;
+      console.log('[DRAG] dragleave - counter:', dragCounter.current);
+      if (dragCounter.current === 0) {
+        console.log('[DRAG] Setting dragActive to FALSE');
+        setDragActive(false);
+      }
+    } else if (e.type === 'dragover') {
+      // Just prevent default, don't change state
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    console.log('[DROP EVENT] Triggered at', e.currentTarget);
     e.preventDefault();
     e.stopPropagation();
+    dragCounter.current = 0; // Reset counter
     setDragActive(false);
     const file = e.dataTransfer.files?.[0];
+    console.log('[DROP] File detected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'NO FILE');
     if (file) {
+      console.log('[DROP] Calling handleFileUpload with file:', file.name);
       handleFileUpload(file);
+    } else {
+      console.log('[DROP] No file found in dataTransfer');
     }
   };
 
@@ -550,11 +572,11 @@ export default function Chat() {
       {/* K-Base Sidebar with Drag & Drop - Overlay */}
       <div 
         className={`absolute left-0 top-0 h-full border-r border-gray-700 overflow-y-auto transition-all duration-300 ease-in-out z-40 ${kbExpanded ? 'w-[calc(100%-96px)]' : 'w-0'} max-w-80`} 
-        style={{ backgroundColor: '#11141a' }}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
+        style={{ backgroundColor: '#11141a', pointerEvents: kbExpanded ? 'auto' : 'none' }}
+        onDragEnter={kbExpanded ? handleDrag : undefined}
+        onDragLeave={kbExpanded ? handleDrag : undefined}
+        onDragOver={kbExpanded ? handleDrag : undefined}
+        onDrop={kbExpanded ? handleDrop : undefined}
       >
         {/* Drag Overlay */}
         {dragActive && kbExpanded && (
@@ -1178,7 +1200,25 @@ export default function Chat() {
         </div>
 
         {/* Input */}
-        <div className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-2 relative" style={{ backgroundColor: '#11141a' }}>
+        <div 
+          className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-2 relative" 
+          style={{ backgroundColor: '#11141a' }}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          {/* Drag Overlay for Footer */}
+          {dragActive && (
+            <div className="absolute inset-0 bg-purple-500/20 border-2 border-dashed border-purple-500 z-50 flex items-center justify-center">
+              <div className="text-center">
+                <svg className="w-12 h-12 text-purple-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-white font-medium text-sm">Drop file to upload</p>
+              </div>
+            </div>
+          )}
           <form onSubmit={(e) => {
             e.preventDefault();
             setSuggestions([]); // Clear suggestions when user sends a message
