@@ -18,9 +18,9 @@ export async function POST(req: Request) {
     const { object } = await generateObject({
       model: openai('gpt-4.1-mini'),
       schema: z.object({
-        suggestions: z.array(z.string().min(3).max(50)).min(3).max(5),
+        suggestions: z.array(z.string().min(3).max(50)).length(3),
       }),
-      prompt: `Based on this conversation, generate 3-5 short follow-up questions (3-7 words each) that the user might ask next.
+      prompt: `Based on this conversation, generate exactly 3 short follow-up questions (3-7 words each) that the user might ask next.
 
 User asked: "${lastUserMessage}"
 Assistant responded: "${lastAssistantMessage}"

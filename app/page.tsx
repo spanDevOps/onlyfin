@@ -835,7 +835,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[0]}`,
                         color: getOptimalTextColor(presetColors.current[0], isDark),
@@ -859,7 +859,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[1]}`,
                         color: getOptimalTextColor(presetColors.current[1], isDark),
@@ -883,7 +883,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[2]}`,
                         color: getOptimalTextColor(presetColors.current[2], isDark),
@@ -911,7 +911,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[3]}`,
                         color: getOptimalTextColor(presetColors.current[3], isDark),
@@ -935,7 +935,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[4]}`,
                         color: getOptimalTextColor(presetColors.current[4], isDark),
@@ -963,7 +963,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[5]}`,
                         color: getOptimalTextColor(presetColors.current[5], isDark),
@@ -987,7 +987,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[6]}`,
                         color: getOptimalTextColor(presetColors.current[6], isDark),
@@ -1011,7 +1011,7 @@ export default function Chat() {
                           if (form) form.requestSubmit();
                         }, 50);
                       }}
-                      className="px-2.5 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                      className="px-2 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
                       style={{
                         backgroundColor: `#${presetColors.current[7]}`,
                         color: getOptimalTextColor(presetColors.current[7], isDark),
@@ -1218,9 +1218,9 @@ export default function Chat() {
 
             {/* Suggestion Cards */}
             {!isLoading && !isAnimating && suggestions.length > 0 && messages.length > 0 && (
-              <div className="flex justify-start mt-4 animate-slideDown">
+              <div className="flex justify-end mt-4 animate-slideDown">
                 <div className="max-w-[85%]">
-                  <div className="flex flex-wrap gap-6 ml-4">
+                  <div className="flex flex-wrap gap-6 mr-4">
                     {suggestions.map((suggestion, index) => (
                       <React.Fragment key={suggestion.id}>
                         <button
@@ -1232,7 +1232,7 @@ export default function Chat() {
                               if (form) form.requestSubmit();
                             }, 50);
                           }}
-                          className="px-3 py-1.5 text-[11px] tracking-wide border rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
+                          className="px-2.5 py-1 text-[9px] tracking-wide border rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105 active:scale-95 font-light antialiased"
                           style={{
                             backgroundColor: `#${suggestion.color}`,
                             color: getOptimalTextColor(suggestion.color, isDark),

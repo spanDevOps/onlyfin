@@ -25,6 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.25, maximum-scale=2.0, user-scalable=yes" />
+      </head>
       <body className={`${poppins.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
