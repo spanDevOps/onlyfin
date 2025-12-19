@@ -33,9 +33,18 @@ export async function chunkText(
     preserveContext: options.preserveContext
   });
   
-  // Dynamic import to avoid webpack issues
-  const tiktoken = await import('tiktoken');
-  const encoder = tiktoken.encoding_for_model('gpt-4');
+  // Try to use tiktoken, fallback to character-based chunking if it fails
+  let encoder: any = null;
+  try {
+    const tiktoken = await import('tiktoken');
+    encoder = tiktoken.encoding_for_model('gpt-4');
+    logger.debug('CHUNKING_ENCODER', 'Using tiktoken encoder');
+  } catch (error) {
+    logger.warn('CHUNKING_ENCODER_FALLBACK', 'Tiktoken not available, using character-based estimation', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    // encoder will remain null, triggering fallback logic
+  }
   
   // Pre-process text to identify structural elements
   const preprocessStart = Date.now();
@@ -56,7 +65,9 @@ export async function chunkText(
   
   for (let i = 0; i < sentences.length; i++) {
     const sentence = sentences[i];
-    const sentenceTokens = encoder.encode(sentence).length;
+    const sentenceTokens = encoder 
+      ? encoder.encode(sentence).length 
+      : estimateTokens(sentence);
     
     // Detect if we're in a list or structured content
     const isListItem = /^\s*[-•*\d+.]\s/.test(sentence);
@@ -74,7 +85,9 @@ export async function chunkText(
     } else if (inList) {
       // End of list, add it to current chunk
       inList = false;
-      const listTokens = encoder.encode(listBuffer).length;
+      const listTokens = encoder 
+        ? encoder.encode(listBuffer).length 
+        : estimateTokens(listBuffer);
       
       if (currentTokens + listTokens > options.maxTokens && currentChunk) {
         chunks.push(currentChunk.trim());
@@ -106,7 +119,9 @@ export async function chunkText(
           .slice(-3) // Keep last 3 sentences for context
           .join('. ') + '.';
         currentChunk = overlapSentences + ' ' + sentence;
-        currentTokens = encoder.encode(currentChunk).length;
+        currentTokens = encoder 
+          ? encoder.encode(currentChunk).length 
+          : estimateTokens(currentChunk);
       } else {
         currentChunk = sentence;
         currentTokens = sentenceTokens;
@@ -143,7 +158,9 @@ export async function chunkText(
   });
   
   // Free encoder after all processing is done
-  encoder.free();
+  if (encoder) {
+    encoder.free();
+  }
   
   logger.info('CHUNKING_COMPLETE', `Chunking completed in ${Date.now() - startTime}ms`, {
     totalTime: Date.now() - startTime,
@@ -180,6 +197,14 @@ function preprocessFinancialText(text: string): string {
 }
 
 /**
+ * Estimate token count from character count (rough approximation)
+ * Average: 1 token ≈ 4 characters for English text
+ */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+/**
  * Merge chunks that are too small
  */
 function mergeSmallChunks(chunks: string[], minTokens: number, encoder: any): string[] {
@@ -187,7 +212,9 @@ function mergeSmallChunks(chunks: string[], minTokens: number, encoder: any): st
   let buffer = '';
   
   for (const chunk of chunks) {
-    const tokens = encoder.encode(chunk).length;
+    const tokens = encoder 
+      ? encoder.encode(chunk).length 
+      : estimateTokens(chunk);
     
     if (tokens < minTokens && buffer) {
       buffer += ' ' + chunk;
