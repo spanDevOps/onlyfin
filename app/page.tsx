@@ -1024,9 +1024,9 @@ export default function Chat() {
                                     </svg>
                                   )}
                                   <span className="font-medium">
-                                    {tool.toolName === 'searchKnowledgeBase' && 'Searching knowledge base...'}
-                                    {tool.toolName === 'searchWeb' && 'Searching the web...'}
-                                    {tool.toolName === 'getUserLocation' && 'Getting your location...'}
+                                    {tool.toolName === 'searchKnowledgeBase' && 'K-Base Search'}
+                                    {tool.toolName === 'searchWeb' && 'Web Search'}
+                                    {tool.toolName === 'getUserLocation' && 'Location'}
                                   </span>
                                   {tool.state === 'result' && tool.toolName === 'getUserLocation' && tool.result?.location && (
                                     <span className="opacity-70">
