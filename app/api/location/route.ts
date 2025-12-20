@@ -83,7 +83,15 @@ export async function GET(req: Request) {
     }
     
     // Use IPinfo.io for better accuracy (as recommended by Perplexity)
-    const geoResponse = await fetch(`https://ipinfo.io/${ip}/json`, {
+    // Note: Add IPINFO_API_TOKEN to .env.local for better accuracy
+    const ipinfoToken = process.env.IPINFO_API_TOKEN;
+    const ipinfoUrl = ipinfoToken 
+      ? `https://ipinfo.io/${ip}/json?token=${ipinfoToken}`
+      : `https://ipinfo.io/${ip}/json`;
+    
+    logger.debug('LOCATION_IPINFO', `Fetching from IPinfo.io (authenticated: ${!!ipinfoToken})`, { ip });
+    
+    const geoResponse = await fetch(ipinfoUrl, {
       headers: {
         'User-Agent': 'OnlyFin-Bot/1.0',
         'Accept': 'application/json'
@@ -99,7 +107,10 @@ export async function GET(req: Request) {
     logger.info('LOCATION_SUCCESS', 'Location retrieved successfully', {
       country: geoData.country,
       city: geoData.city,
-      timezone: geoData.timezone
+      region: geoData.region,
+      timezone: geoData.timezone,
+      ip: ip,
+      source: ipinfoToken ? 'ipinfo-api-authenticated' : 'ipinfo-api-free'
     });
     
     return NextResponse.json({
@@ -114,7 +125,8 @@ export async function GET(req: Request) {
         language: getLanguageByCountry(geoData.country),
         latitude: geoData.loc ? parseFloat(geoData.loc.split(',')[0]) : undefined,
         longitude: geoData.loc ? parseFloat(geoData.loc.split(',')[1]) : undefined,
-        source: 'ipinfo-api'
+        source: ipinfoToken ? 'ipinfo-api-authenticated' : 'ipinfo-api-free',
+        ip: ip // Include IP for debugging
       }
     });
   } catch (error: any) {
