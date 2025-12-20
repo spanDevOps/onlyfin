@@ -32,8 +32,15 @@ export default function Chat() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   
+  // Detect if device is mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
   // Preset questions - generated once on mount
   const [presetQuestions, setPresetQuestions] = useState<PresetQuestion[]>([]);
+  
+  // Swipe detection for mobile sidebar toggle
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
   
   // Random corner lottie (only once on mount)
   // Automatically detects lottie files numbered 1.lottie, 2.lottie, etc. in /public/corners/
@@ -61,6 +68,14 @@ export default function Chat() {
     
     // Generate preset questions once on mount
     setPresetQuestions(getRandomPresetQuestions(8));
+    
+    // Detect mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
   // Typing effect for welcome message with smart delays
@@ -453,6 +468,37 @@ export default function Chat() {
     }
   };
 
+  // Long press handlers for mobile sidebar toggle
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile) return;
+    
+    const swipeDistance = touchEndX.current - touchStartX.current;
+    const minSwipeDistance = 50; // Minimum swipe distance in pixels
+    
+    // Swipe right to expand
+    if (swipeDistance > minSwipeDistance && !kbExpanded) {
+      setKbExpanded(true);
+    }
+    // Swipe left to collapse
+    else if (swipeDistance < -minSwipeDistance && kbExpanded) {
+      setKbExpanded(false);
+    }
+    
+    // Reset
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
   // Format tool names for display
   const formatToolName = (toolName: string) => {
     return toolName
@@ -478,16 +524,16 @@ export default function Chat() {
     return message.content ?? "";
   };
 
-  // Refocus input after animation completes
+  // Refocus input after animation completes (disabled on mobile)
   useEffect(() => {
-    if (!isLoading && !isAnimating) {
+    if (!isLoading && !isAnimating && !isMobile) {
       // Use setTimeout to ensure focus happens after all state updates
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isAnimating]);
+  }, [isLoading, isAnimating, isMobile]);
 
   return (
     <div 
@@ -506,6 +552,9 @@ export default function Chat() {
           setKbExpanded(!kbExpanded);
         }
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Violet Gradient Strip at Extreme Left Edge */}
       <div 
@@ -653,7 +702,7 @@ export default function Chat() {
         )}
 
         {/* Header - Half Size */}
-        <div className="border-gray-600/30 backdrop-blur-sm shadow-sm border-b px-6 py-1.5" style={{ backgroundColor: '#11141a' }}>
+        <div className="border-gray-600/30 backdrop-blur-sm shadow-sm border-b px-6 py-1.5 sticky top-0 z-30 md:relative" style={{ backgroundColor: '#11141a' }}>
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <div className="flex items-center">
               <a href="/" className="cursor-pointer">
@@ -1029,7 +1078,7 @@ export default function Chat() {
 
         {/* Input */}
         <div 
-          className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-2 relative" 
+          className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-2 relative sticky bottom-0 z-30 md:relative" 
           style={{ backgroundColor: '#11141a' }}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
