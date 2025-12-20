@@ -177,7 +177,7 @@ export default function KBManager({ onLoadComplete }: { onLoadComplete?: () => v
               deleteDocument(doc.filename);
             }}
             disabled={deleting === doc.filename}
-            className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-all disabled:opacity-50"
+            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-all disabled:opacity-50"
             title="Delete"
           >
             {deleting === doc.filename ? (
