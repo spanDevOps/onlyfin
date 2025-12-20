@@ -1205,7 +1205,7 @@ export default function Chat() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             )}
-            <span className="text-xs md:text-sm font-medium">{toast.message}</span>
+            <span className="text-[10px] md:text-xs font-medium">{toast.message}</span>
           </div>
         </div>
       )}
