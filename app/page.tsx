@@ -1093,7 +1093,7 @@ export default function Chat() {
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Ask me anything about finance..."
-                className={`flex-1 px-3.5 py-2 text-xs border ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400' : 'bg-white/80 border-gray-400/60 text-gray-900 font-medium placeholder-gray-600'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200`}
+                className={`flex-1 min-w-0 px-3.5 py-2 text-xs border ${isDark ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400' : 'bg-white/80 border-gray-400/60 text-gray-900 font-medium placeholder-gray-600'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200`}
                 disabled={isLoading || isAnimating}
               />
               {(isLoading || isAnimating) ? (
@@ -1124,9 +1124,9 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Random Corner Animation - Right Edge (Random Vertical Position) */}
+      {/* Random Corner Animation - Right Edge (Random Vertical Position) - Hidden on mobile */}
       <div 
-        className="fixed right-0 z-50 pointer-events-none"
+        className="fixed right-0 z-50 pointer-events-none hidden md:block"
         style={{ top: `${cornerPosition.current}%` }}
       >
         <DotLottieReact
@@ -1156,7 +1156,7 @@ export default function Chat() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             )}
-            <span className="text-xs font-medium">{toast.message}</span>
+            <span className="text-xs md:text-sm font-medium">{toast.message}</span>
           </div>
         </div>
       )}
