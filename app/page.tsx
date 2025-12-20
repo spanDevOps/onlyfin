@@ -10,170 +10,6 @@ import KBManager from '@/components/KBManager';
 
 const CPS = 70; // characters per second (balanced speed for readability)
 
-// Color palette for suggestions and presets - organized by color family
-const COLOR_PALETTE = [
-  // Green family
-  '10ea5d',
-  '85eb34',
-  '62f608',
-  '33c73a',
-  // Cyan family
-  '01fff4',
-  // Yellow family
-  'fffa0c',
-  'ffff08',
-  // Pink/Magenta family
-  'f712e8',
-  'f60062',
-  'f142ee',
-  // Purple family
-  '9333ea',
-  // Blue family
-  '2323ff',
-  '3c14cf',
-  '3634da',
-  '3154e6',
-  '2b74f0',
-  '2593fc',
-  // Orange family
-  'f75900',
-  'f76c32',
-  // Red family
-  'db0000',
-  // Light family
-  'e5f2ff'
-];
-
-// Get random color with diversity - ensures each color is used at least once before repeating
-const getRandomColorWithDiversity = (usedColors: string[] = []) => {
-  // Count how many times each color has been used
-  const colorCounts = COLOR_PALETTE.map(color => ({
-    color,
-    count: usedColors.filter(used => used === color).length
-  }));
-  
-  // Find the minimum count
-  const minCount = Math.min(...colorCounts.map(c => c.count));
-  
-  // Get colors that have been used the least
-  const leastUsedColors = colorCounts
-    .filter(c => c.count === minCount)
-    .map(c => c.color);
-  
-  // Randomly select from least used colors
-  return leastUsedColors[Math.floor(Math.random() * leastUsedColors.length)];
-};
-
-// Convert hex to RGB
-const hexToRgb = (hex: string) => {
-  const cleanHex = hex.replace('#', '');
-  return {
-    r: parseInt(cleanHex.substring(0, 2), 16),
-    g: parseInt(cleanHex.substring(2, 4), 16),
-    b: parseInt(cleanHex.substring(4, 6), 16)
-  };
-};
-
-// Calculate relative luminance (WCAG formula)
-const getLuminance = (r: number, g: number, b: number) => {
-  const [rs, gs, bs] = [r, g, b].map(c => {
-    const val = c / 255;
-    return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-};
-
-// Calculate contrast ratio between two colors
-const getContrastRatio = (lum1: number, lum2: number) => {
-  const lighter = Math.max(lum1, lum2);
-  const darker = Math.min(lum1, lum2);
-  return (lighter + 0.05) / (darker + 0.05);
-};
-
-// Get optimal text color (white or black hue) based on background color
-const getOptimalTextColor = (bgColor: string, isDark: boolean) => {
-  const bgRgb = hexToRgb(bgColor);
-  const bgLum = getLuminance(bgRgb.r, bgRgb.g, bgRgb.b);
-  
-  // White hues for dark backgrounds
-  const whiteHues = [
-    '#ffffff', // Pure white
-    '#f5f5f5', // Very light gray
-    '#e8e8e8', // Light gray
-    '#d4d4d4', // Medium-light gray
-  ];
-  
-  // Black hues for light backgrounds
-  const blackHues = [
-    '#000000', // Pure black
-    '#1a1a1a', // Very dark gray
-    '#2d2d2d', // Dark gray
-    '#404040', // Medium-dark gray
-  ];
-  
-  // Determine if background is light or dark
-  const isLightBg = bgLum > 0.5;
-  const candidates = isLightBg ? blackHues : whiteHues;
-  
-  // Find the candidate with best contrast (minimum 4.5:1 for WCAG AA)
-  let bestColor = candidates[0];
-  let bestContrast = 0;
-  
-  for (const color of candidates) {
-    const colorRgb = hexToRgb(color);
-    const colorLum = getLuminance(colorRgb.r, colorRgb.g, colorRgb.b);
-    const contrast = getContrastRatio(bgLum, colorLum);
-    
-    if (contrast > bestContrast) {
-      bestContrast = contrast;
-      bestColor = color;
-    }
-  }
-  
-  return bestColor;
-};
-
-// Get optimal background color based on text color and theme background
-const getCardBackground = (textColor: string, isDark: boolean) => {
-  const textRgb = hexToRgb(textColor);
-  const textLum = getLuminance(textRgb.r, textRgb.g, textRgb.b);
-  
-  // Theme background colors
-  const themeBg = isDark ? '#0d1117' : '#c5c7ca';
-  const themeBgRgb = hexToRgb(themeBg);
-  const themeBgLum = getLuminance(themeBgRgb.r, themeBgRgb.g, themeBgRgb.b);
-  
-  // We want high contrast with text, but also blend with theme
-  // Try different background luminance values and pick the best
-  const candidates = [
-    { lum: 0.95, color: '#f5f5f5' },  // Very light
-    { lum: 0.85, color: '#d9d9d9' },  // Light
-    { lum: 0.70, color: '#b3b3b3' },  // Medium-light
-    { lum: 0.50, color: '#808080' },  // Medium
-    { lum: 0.30, color: '#4d4d4d' },  // Medium-dark
-    { lum: 0.15, color: '#262626' },  // Dark
-    { lum: 0.05, color: '#0d0d0d' },  // Very dark
-  ];
-  
-  // Find the candidate with best contrast to text (minimum 4.5:1 for WCAG AA)
-  let bestCandidate = candidates[0];
-  let bestContrast = 0;
-  
-  for (const candidate of candidates) {
-    const contrast = getContrastRatio(textLum, candidate.lum);
-    // Prefer candidates that also work well with theme background
-    const themeContrast = getContrastRatio(candidate.lum, themeBgLum);
-    const score = contrast + (themeContrast * 0.3); // Weight text contrast more heavily
-    
-    if (score > bestContrast) {
-      bestContrast = score;
-      bestCandidate = candidate;
-    }
-  }
-  
-  return bestCandidate.color;
-};
-
 export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -194,25 +30,6 @@ export default function Chat() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Generate stable colors and animations for preset buttons (only once on mount)
-  const presetColors = useRef<string[]>([]);
-  const presetAnimations = useRef<Array<{ duration: number; xOffset: number; yOffset: number }>>([]);
-  
-  if (presetColors.current.length === 0) {
-    // Generate colors with diversity - each color family used once before repeating
-    const colors: string[] = [];
-    for (let i = 0; i < 8; i++) {
-      colors.push(getRandomColorWithDiversity(colors));
-    }
-    presetColors.current = colors;
-    
-    presetAnimations.current = Array(8).fill(0).map(() => ({
-      duration: 3 + Math.random() * 4, // 3-7 seconds
-      xOffset: (Math.random() - 0.5) * 8, // -4px to +4px
-      yOffset: (Math.random() - 0.5) * 8, // -4px to +4px
-    }));
-  }
   
   // Random corner lottie (only once on mount)
   // Automatically detects lottie files numbered 1.lottie, 2.lottie, etc. in /public/corners/
@@ -364,15 +181,11 @@ export default function Chat() {
         .then(res => res.json())
         .then(data => {
           if (data.success && data.suggestions) {
-            // Generate colors with diversity - each color family used once before repeating
-            const colors: string[] = [];
             const newSuggestions = data.suggestions.map((text: string, i: number) => {
-              const color = getRandomColorWithDiversity(colors);
-              colors.push(color);
               return {
                 id: `suggestion-${lastMessage.id}-${i}`,
                 text: text,
-                color: color,
+                color: '9333ea', // Fixed neon violet color
                 floatDuration: 6 + Math.random() * 6, // 6-12 seconds for very slow movement
                 xOffset: (Math.random() - 0.5) * 8,
                 yOffset: (Math.random() - 0.5) * 8,
@@ -670,7 +483,23 @@ export default function Chat() {
   }, [isLoading, isAnimating]);
 
   return (
-    <div className="flex h-screen relative" style={{ backgroundColor: isDark ? '#0d1117' : '#c5c7ca' }}>
+    <div 
+      className="flex h-screen relative" 
+      style={{ backgroundColor: isDark ? '#0d1117' : '#c5c7ca' }}
+      onDoubleClick={(e) => {
+        // Only toggle if double-click is on the main area (not on sidebar, buttons, or input)
+        const target = e.target as HTMLElement;
+        const isMainArea = !target.closest('.sidebar-area') && 
+                          !target.closest('button') && 
+                          !target.closest('input') && 
+                          !target.closest('textarea') && 
+                          !target.closest('.message-area') &&
+                          !target.closest('.tool-call');
+        if (isMainArea) {
+          setKbExpanded(!kbExpanded);
+        }
+      }}
+    >
       {/* Violet Gradient Strip at Extreme Left Edge */}
       <div 
         className="absolute left-0 top-0 h-full w-2 z-30"
@@ -683,7 +512,7 @@ export default function Chat() {
       
       {/* K-Base Sidebar with Drag & Drop - Overlay */}
       <div 
-        className={`absolute left-0 top-0 h-full border-r border-gray-700 overflow-y-auto transition-all duration-300 ease-in-out z-40 ${kbExpanded ? 'w-[calc(100%-96px)]' : 'w-0'} max-w-80`} 
+        className={`sidebar-area absolute left-0 top-0 h-full border-r border-gray-700 overflow-y-auto transition-all duration-300 ease-in-out z-40 ${kbExpanded ? 'w-[calc(100%-96px)]' : 'w-0'} max-w-80`} 
         style={{ backgroundColor: '#11141a', pointerEvents: kbExpanded ? 'auto' : 'none' }}
         onDragEnter={kbExpanded ? handleDrag : undefined}
         onDragLeave={kbExpanded ? handleDrag : undefined}
@@ -747,10 +576,11 @@ export default function Chat() {
         onClick={() => setKbExpanded(!kbExpanded)}
         className="absolute top-1/2 -translate-y-1/2 z-50"
         style={{
-          left: kbExpanded ? 'min(calc(100vw - 96px), 320px)' : '8px',
+          left: kbExpanded ? '320px' : '8px', // Position at max sidebar width (320px) when expanded
           width: '44px',
           height: '500px',
-          transition: 'left 300ms ease-in-out'
+          transition: 'left 300ms ease-in-out',
+          transform: 'translateY(-50%)'
         }}
         title={kbExpanded ? 'Collapse K-Base' : 'Expand K-Base'}
       >
@@ -1014,7 +844,7 @@ export default function Chat() {
 
             {messages.map((message, index) => {
               return (
-                <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={message.id} className={`message-area flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] ${message.role === 'user' ? 'animate-slide-brake' : ''}`}>
                     <div 
                       className={`${message.role === 'user' ? 'px-4 py-1' : 'px-4 py-2'}`}

@@ -36,5 +36,8 @@ next-env.d.ts
 /logs
 *.log
 
+# Letters to Perplexity (internal consultation)
+/Letters to Perplexity
+
 .kiro/
 docs/CHANGELOG.md
