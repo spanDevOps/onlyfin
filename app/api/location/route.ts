@@ -4,60 +4,30 @@ import { logger } from '@/lib/logger';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/location - Get user's approximate location based on IP
+ * GET /api/location - Get user's approximate location based on IP using IPinfo.io
  * This is called by the LLM when it needs location context
- * Updated to use Vercel's built-in geolocation headers for better accuracy
+ * Requires IPINFO_API_TOKEN environment variable
  */
 export async function GET(req: Request) {
   try {
     logger.info('LOCATION_REQUEST', 'LLM requesting user location');
     
-    // First try Vercel's built-in geolocation headers (most accurate)
-    const vercelCountry = req.headers.get('x-vercel-ip-country');
-    const vercelCity = req.headers.get('x-vercel-ip-city');
-    const vercelRegion = req.headers.get('x-vercel-ip-region');
-    const vercelTimezone = req.headers.get('x-vercel-ip-timezone');
-    const vercelLatitude = req.headers.get('x-vercel-ip-latitude');
-    const vercelLongitude = req.headers.get('x-vercel-ip-longitude');
-    
-    // If Vercel headers are available, use them (no external API needed)
-    if (vercelCountry && vercelCity) {
-      logger.info('LOCATION_VERCEL', 'Using Vercel geolocation headers', {
-        country: vercelCountry,
-        city: vercelCity,
-        timezone: vercelTimezone
-      });
-      
+    // Check for API token
+    const ipinfoToken = process.env.IPINFO_API_TOKEN;
+    if (!ipinfoToken) {
+      logger.error('LOCATION_ERROR', 'IPINFO_API_TOKEN not configured');
       return NextResponse.json({
-        success: true,
-        location: {
-          country: vercelCountry,
-          countryCode: vercelCountry, // Vercel provides country code
-          city: vercelCity,
-          region: vercelRegion || 'Unknown',
-          timezone: vercelTimezone || 'UTC',
-          currency: getCurrencyByCountry(vercelCountry),
-          language: getLanguageByCountry(vercelCountry),
-          latitude: vercelLatitude ? parseFloat(vercelLatitude) : undefined,
-          longitude: vercelLongitude ? parseFloat(vercelLongitude) : undefined,
-          source: 'vercel-headers'
-        }
-      });
+        success: false,
+        error: 'Location service not configured. Please add IPINFO_API_TOKEN to environment variables.'
+      }, { status: 500 });
     }
     
-    // Fallback to IP extraction with improved header priority
-    const vercelForwardedFor = req.headers.get('x-vercel-forwarded-for');
-    const vercelProxiedFor = req.headers.get('x-vercel-proxied-for');
+    // Extract IP from headers
     const forwarded = req.headers.get('x-forwarded-for');
     const realIp = req.headers.get('x-real-ip');
     
-    // Priority: Vercel-specific headers > generic forwarded > real-ip
     let ip = 'unknown';
-    if (vercelForwardedFor) {
-      ip = vercelForwardedFor.split(',')[0].trim();
-    } else if (vercelProxiedFor) {
-      ip = vercelProxiedFor.split(',')[0].trim();
-    } else if (forwarded) {
+    if (forwarded) {
       ip = forwarded.split(',')[0].trim();
     } else if (realIp) {
       ip = realIp;
@@ -65,9 +35,9 @@ export async function GET(req: Request) {
     
     logger.debug('LOCATION_IP', `Detected IP: ${ip}`);
     
-    // For localhost/development, return a default location
+    // For localhost/development, return a note
     if (ip === 'unknown' || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-      logger.info('LOCATION_LOCALHOST', 'Localhost detected, returning default location');
+      logger.info('LOCATION_LOCALHOST', 'Localhost detected');
       return NextResponse.json({
         success: true,
         location: {
@@ -82,14 +52,10 @@ export async function GET(req: Request) {
       });
     }
     
-    // Use IPinfo.io for better accuracy (as recommended by Perplexity)
-    // Note: Add IPINFO_API_TOKEN to .env.local for better accuracy
-    const ipinfoToken = process.env.IPINFO_API_TOKEN;
-    const ipinfoUrl = ipinfoToken 
-      ? `https://ipinfo.io/${ip}/json?token=${ipinfoToken}`
-      : `https://ipinfo.io/${ip}/json`;
+    // Use IPinfo.io with API token
+    const ipinfoUrl = `https://ipinfo.io/${ip}/json?token=${ipinfoToken}`;
     
-    logger.debug('LOCATION_IPINFO', `Fetching from IPinfo.io (authenticated: ${!!ipinfoToken})`, { ip });
+    logger.debug('LOCATION_IPINFO', 'Fetching from IPinfo.io', { ip });
     
     const geoResponse = await fetch(ipinfoUrl, {
       headers: {
@@ -99,7 +65,9 @@ export async function GET(req: Request) {
     });
     
     if (!geoResponse.ok) {
-      throw new Error(`IPinfo API error: ${geoResponse.status}`);
+      const errorText = await geoResponse.text();
+      logger.error('LOCATION_IPINFO_ERROR', `IPinfo API error: ${geoResponse.status}`, { error: errorText });
+      throw new Error(`IPinfo API error: ${geoResponse.status} - ${errorText}`);
     }
     
     const geoData = await geoResponse.json();
@@ -109,8 +77,7 @@ export async function GET(req: Request) {
       city: geoData.city,
       region: geoData.region,
       timezone: geoData.timezone,
-      ip: ip,
-      source: ipinfoToken ? 'ipinfo-api-authenticated' : 'ipinfo-api-free'
+      ip: ip
     });
     
     return NextResponse.json({
@@ -125,7 +92,7 @@ export async function GET(req: Request) {
         language: getLanguageByCountry(geoData.country),
         latitude: geoData.loc ? parseFloat(geoData.loc.split(',')[0]) : undefined,
         longitude: geoData.loc ? parseFloat(geoData.loc.split(',')[1]) : undefined,
-        source: ipinfoToken ? 'ipinfo-api-authenticated' : 'ipinfo-api-free',
+        source: 'ipinfo-api',
         ip: ip // Include IP for debugging
       }
     });
@@ -135,19 +102,10 @@ export async function GET(req: Request) {
       stack: error.stack
     });
     
-    // Return a fallback response instead of error
     return NextResponse.json({
-      success: true,
-      location: {
-        country: 'Unknown',
-        city: 'Unknown',
-        timezone: 'UTC',
-        currency: 'USD',
-        language: 'en',
-        source: 'fallback',
-        note: 'Location detection temporarily unavailable'
-      }
-    });
+      success: false,
+      error: 'Failed to retrieve location information'
+    }, { status: 500 });
   }
 }
 
