@@ -514,6 +514,7 @@ export default function Chat() {
       <div 
         className={`sidebar-area absolute left-0 top-0 h-full border-r border-gray-700 overflow-y-auto transition-all duration-300 ease-in-out z-40 ${kbExpanded ? 'w-[calc(100%-96px)]' : 'w-0'} max-w-80`} 
         style={{ backgroundColor: '#11141a', pointerEvents: kbExpanded ? 'auto' : 'none' }}
+        onDoubleClick={() => setKbExpanded(false)}
         onDragEnter={kbExpanded ? handleDrag : undefined}
         onDragLeave={kbExpanded ? handleDrag : undefined}
         onDragOver={kbExpanded ? handleDrag : undefined}
