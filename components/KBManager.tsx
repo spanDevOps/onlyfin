@@ -136,7 +136,7 @@ export default function KBManager({ onLoadComplete }: { onLoadComplete?: () => v
       {documents.map(doc => (
         <div
           key={doc.id}
-          className="group flex items-start gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg border border-gray-700/50 transition-all duration-200 cursor-pointer"
+          className="group flex items-start gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg border border-gray-700/50 transition-all duration-200"
         >
           {/* File Icon */}
           <div className="flex-shrink-0 mt-0.5">
@@ -173,11 +173,16 @@ export default function KBManager({ onLoadComplete }: { onLoadComplete?: () => v
           {/* Delete Button */}
           <button
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               deleteDocument(doc.filename);
             }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             disabled={deleting === doc.filename}
-            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-all disabled:opacity-50"
+            className="flex-shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-all disabled:opacity-50 touch-manipulation"
             title="Delete"
           >
             {deleting === doc.filename ? (
