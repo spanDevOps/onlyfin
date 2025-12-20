@@ -4,15 +4,57 @@ import { logger } from '@/lib/logger';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/location - Get user's approximate location based on IP using IPinfo.io
+ * GET /api/location - Get user's approximate location
+ * Uses Vercel's geolocation headers (most accurate) with IPinfo.io as fallback
  * This is called by the LLM when it needs location context
- * Requires IPINFO_API_TOKEN environment variable
  */
 export async function GET(req: Request) {
   try {
     logger.info('LOCATION_REQUEST', 'LLM requesting user location');
     
-    // Check for API token
+    // PRIORITY 1: Use Vercel's geolocation headers (most accurate - bypasses edge routing)
+    const vercelCountry = req.headers.get('x-vercel-ip-country');
+    const vercelCity = req.headers.get('x-vercel-ip-city');
+    const vercelRegion = req.headers.get('x-vercel-ip-region');
+    const vercelTimezone = req.headers.get('x-vercel-ip-timezone');
+    const vercelLatitude = req.headers.get('x-vercel-ip-latitude');
+    const vercelLongitude = req.headers.get('x-vercel-ip-longitude');
+    
+    logger.debug('LOCATION_VERCEL_HEADERS', 'Vercel geolocation headers', {
+      country: vercelCountry,
+      city: vercelCity,
+      region: vercelRegion,
+      timezone: vercelTimezone
+    });
+    
+    // If Vercel headers are available, use them (they contain the real user location)
+    if (vercelCountry && vercelCity) {
+      logger.info('LOCATION_SUCCESS_VERCEL', 'Using Vercel geolocation headers', {
+        country: vercelCountry,
+        city: vercelCity,
+        timezone: vercelTimezone
+      });
+      
+      return NextResponse.json({
+        success: true,
+        location: {
+          country: getCountryName(vercelCountry) || vercelCountry,
+          countryCode: vercelCountry,
+          city: vercelCity,
+          region: vercelRegion || 'Unknown',
+          timezone: vercelTimezone || 'UTC',
+          currency: getCurrencyByCountry(vercelCountry),
+          language: getLanguageByCountry(vercelCountry),
+          latitude: vercelLatitude ? parseFloat(vercelLatitude) : undefined,
+          longitude: vercelLongitude ? parseFloat(vercelLongitude) : undefined,
+          source: 'vercel-headers'
+        }
+      });
+    }
+    
+    // PRIORITY 2: Fallback to IPinfo.io if Vercel headers not available
+    logger.warn('LOCATION_NO_VERCEL_HEADERS', 'Vercel headers not available, falling back to IPinfo.io');
+    
     const ipinfoToken = process.env.IPINFO_API_TOKEN;
     if (!ipinfoToken) {
       logger.error('LOCATION_ERROR', 'IPINFO_API_TOKEN not configured');
@@ -33,7 +75,9 @@ export async function GET(req: Request) {
       ip = realIp;
     }
     
-    logger.debug('LOCATION_IP', `Detected IP: ${ip}`);
+    logger.info('LOCATION_IP_EXTRACTED', `Extracted IP: ${ip}`, { 
+      source: forwarded ? 'x-forwarded-for' : realIp ? 'x-real-ip' : 'none'
+    });
     
     // For localhost/development, return a note
     if (ip === 'unknown' || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
@@ -72,7 +116,7 @@ export async function GET(req: Request) {
     
     const geoData = await geoResponse.json();
     
-    logger.info('LOCATION_SUCCESS', 'Location retrieved successfully', {
+    logger.info('LOCATION_SUCCESS_IPINFO', 'Location retrieved from IPinfo.io', {
       country: geoData.country,
       city: geoData.city,
       region: geoData.region,
@@ -93,7 +137,7 @@ export async function GET(req: Request) {
         latitude: geoData.loc ? parseFloat(geoData.loc.split(',')[0]) : undefined,
         longitude: geoData.loc ? parseFloat(geoData.loc.split(',')[1]) : undefined,
         source: 'ipinfo-api',
-        ip: ip // Include IP for debugging
+        ip: ip
       }
     });
   } catch (error: any) {
