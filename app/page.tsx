@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import FileUpload from '@/components/FileUpload';
 import KBManager from '@/components/KBManager';
+import { getRandomPresetQuestions, type PresetQuestion } from '@/lib/preset-questions';
 
 const CPS = 70; // characters per second (balanced speed for readability)
 
@@ -31,6 +32,9 @@ export default function Chat() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   
+  // Preset questions - generated once on mount
+  const [presetQuestions, setPresetQuestions] = useState<PresetQuestion[]>([]);
+  
   // Random corner lottie (only once on mount)
   // Automatically detects lottie files numbered 1.lottie, 2.lottie, etc. in /public/corners/
   // To add more: just add numbered files (3.lottie, 4.lottie, etc.) and update NEXT_PUBLIC_CORNER_LOTTIE_COUNT in .env.local
@@ -54,6 +58,9 @@ export default function Chat() {
       const savedTheme = getTheme();
       setTheme(savedTheme);
     });
+    
+    // Generate preset questions once on mount
+    setPresetQuestions(getRandomPresetQuestions(8));
   }, []);
   
   // Typing effect for welcome message with smart delays
@@ -686,158 +693,77 @@ export default function Chat() {
                 <div className="flex flex-col gap-6 items-center max-w-4xl mx-auto">
                   {/* Row 1: 3 cards */}
                   <div className="flex gap-6 justify-center">
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "How should I budget my monthly expenses?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      How to budget expenses?
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "What are the best investment options for beginners?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Best investments for beginners?
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "How can I improve my credit score?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Improve credit score?
-                    </button>
+                    {presetQuestions.slice(0, 3).map((question) => (
+                      <button
+                        key={question.id}
+                        onClick={() => {
+                          handleInputChange({ target: { value: question.text } } as any);
+                          setTimeout(() => {
+                            const form = document.querySelector('form');
+                            if (form) form.requestSubmit();
+                          }, 50);
+                        }}
+                        className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: '#9333ea',
+                          borderColor: '#9333ea',
+                          boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
+                        }}
+                      >
+                        {question.shortText}
+                      </button>
+                    ))}
                   </div>
                   
                   {/* Row 2: 2 cards */}
                   <div className="flex gap-6 justify-center">
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "What's the difference between stocks and bonds?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Stocks vs bonds?
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "How much should I save for retirement?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Retirement savings?
-                    </button>
+                    {presetQuestions.slice(3, 5).map((question) => (
+                      <button
+                        key={question.id}
+                        onClick={() => {
+                          handleInputChange({ target: { value: question.text } } as any);
+                          setTimeout(() => {
+                            const form = document.querySelector('form');
+                            if (form) form.requestSubmit();
+                          }, 50);
+                        }}
+                        className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: '#9333ea',
+                          borderColor: '#9333ea',
+                          boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
+                        }}
+                      >
+                        {question.shortText}
+                      </button>
+                    ))}
                   </div>
                   
                   {/* Row 3: 3 cards */}
                   <div className="flex gap-6 justify-center">
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "What are tax deductions I should know about?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Tax deductions?
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "Should I pay off debt or invest?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Pay debt or invest?
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleInputChange({ target: { value: "How do I start building an emergency fund?" } } as any);
-                        setTimeout(() => {
-                          const form = document.querySelector('form');
-                          if (form) form.requestSubmit();
-                        }, 50);
-                      }}
-                      className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: '#9333ea',
-                        borderColor: '#9333ea',
-                        boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
-                      }}
-                    >
-                      Emergency fund tips?
-                    </button>
+                    {presetQuestions.slice(5, 8).map((question) => (
+                      <button
+                        key={question.id}
+                        onClick={() => {
+                          handleInputChange({ target: { value: question.text } } as any);
+                          setTimeout(() => {
+                            const form = document.querySelector('form');
+                            if (form) form.requestSubmit();
+                          }, 50);
+                        }}
+                        className="px-2 py-1 text-xs tracking-wide border-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 font-light antialiased"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: '#9333ea',
+                          borderColor: '#9333ea',
+                          boxShadow: '0 0 10px rgba(147, 51, 234, 0.5), inset 0 0 10px rgba(147, 51, 234, 0.1)',
+                        }}
+                      >
+                        {question.shortText}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
