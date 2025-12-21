@@ -214,10 +214,25 @@ export default function Chat() {
             
             // Show toast
             setToast({ 
-              message: `Location detected: ${location.city}, ${location.country}`, 
+              message: `Location detected: ${location.city}, ${location.country}. Retrying your request...`, 
               type: 'success' 
             });
             setTimeout(dismissToast, 3000);
+            
+            // Automatically retry the last user message with location context
+            // Find the last user message
+            const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user');
+            if (lastUserMessage) {
+              console.log('[LOCATION] Retrying user message with location context');
+              // Use setTimeout to ensure location is in headers
+              setTimeout(() => {
+                handleInputChange({ target: { value: lastUserMessage.content } } as any);
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) form.requestSubmit();
+                }, 50);
+              }, 100);
+            }
           } else {
             console.log('[LOCATION] Failed to get location');
             setLocationRequested(false);
