@@ -169,21 +169,23 @@ export default function Chat() {
     }))
   ).current;
 
+  // Prepare headers with session and location
+  const chatHeaders = React.useMemo(() => {
+    const headers: Record<string, string> = {};
+    
+    if (sessionId) {
+      headers['x-session-id'] = sessionId;
+    }
+    
+    if (cachedLocation) {
+      headers['x-client-location'] = JSON.stringify(cachedLocation);
+    }
+    
+    return headers;
+  }, [sessionId, cachedLocation]);
+
   const { messages, input, handleInputChange, handleSubmit, isLoading, stop } = useChat({
-    headers: () => {
-      const headers: Record<string, string> = {};
-      
-      if (sessionId) {
-        headers['x-session-id'] = sessionId;
-      }
-      
-      // Add cached location to headers if available
-      if (cachedLocation) {
-        headers['x-client-location'] = JSON.stringify(cachedLocation);
-      }
-      
-      return headers;
-    },
+    headers: chatHeaders,
   });
 
   // Check if currently animating
@@ -199,7 +201,7 @@ export default function Chat() {
         (tool: any) => tool.toolName === 'getUserLocation' && tool.state === 'result'
       );
       
-      if (locationTool?.result?.requiresLocation && !locationRequested && !cachedLocation) {
+      if (locationTool && 'result' in locationTool && locationTool.result?.requiresLocation && !locationRequested && !cachedLocation) {
         console.log('[LOCATION] LLM requested location, getting from browser...');
         setLocationRequested(true);
         
