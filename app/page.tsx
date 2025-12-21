@@ -8,6 +8,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import FileUpload from '@/components/FileUpload';
 import KBManager from '@/components/KBManager';
 import { getRandomPresetQuestions, type PresetQuestion } from '@/lib/preset-questions';
+import { getCompleteClientLocation, type CompleteLocation } from '@/lib/client-location';
 
 const CPS = 70; // characters per second (balanced speed for readability)
 
@@ -41,6 +42,10 @@ export default function Chat() {
   // Swipe detection for mobile sidebar toggle
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  
+  // Location state
+  const [cachedLocation, setCachedLocation] = useState<CompleteLocation | null>(null);
+  const [locationRequested, setLocationRequested] = useState(false);
   
   // Random corner lottie (only once on mount)
   // Automatically detects lottie files numbered 1.lottie, 2.lottie, etc. in /public/corners/
@@ -165,13 +170,65 @@ export default function Chat() {
   ).current;
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, stop } = useChat({
-    headers: sessionId ? {
-      'x-session-id': sessionId,
-    } : undefined,
+    headers: () => {
+      const headers: Record<string, string> = {};
+      
+      if (sessionId) {
+        headers['x-session-id'] = sessionId;
+      }
+      
+      // Add cached location to headers if available
+      if (cachedLocation) {
+        headers['x-client-location'] = JSON.stringify(cachedLocation);
+      }
+      
+      return headers;
+    },
   });
 
   // Check if currently animating
   const isAnimating = animatingId !== null;
+
+  // Auto-request location when LLM needs it
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    
+    // Check if last message has a tool invocation requesting location
+    if (lastMessage?.toolInvocations) {
+      const locationTool = lastMessage.toolInvocations.find(
+        (tool: any) => tool.toolName === 'getUserLocation' && tool.state === 'result'
+      );
+      
+      if (locationTool?.result?.requiresLocation && !locationRequested && !cachedLocation) {
+        console.log('[LOCATION] LLM requested location, getting from browser...');
+        setLocationRequested(true);
+        
+        // Get location from browser
+        getCompleteClientLocation().then((location) => {
+          if (location) {
+            console.log('[LOCATION] Location obtained:', location.city, location.country);
+            setCachedLocation(location);
+            setLocationRequested(false);
+            
+            // Show toast
+            setToast({ 
+              message: `Location detected: ${location.city}, ${location.country}`, 
+              type: 'success' 
+            });
+            setTimeout(dismissToast, 3000);
+          } else {
+            console.log('[LOCATION] Failed to get location');
+            setLocationRequested(false);
+            setToast({ 
+              message: 'Could not detect location. Please enable location access.', 
+              type: 'error' 
+            });
+            setTimeout(dismissToast, 5000);
+          }
+        });
+      }
+    }
+  }, [messages, locationRequested, cachedLocation]);
 
   // Generate suggestions after assistant response completes
   useEffect(() => {

@@ -224,42 +224,41 @@ export async function POST(req: Request) {
       toolChoice: 'auto', // Let LLM decide when to use tools
       tools: {
         getUserLocation: tool({
-          description: 'Get the user\'s approximate location (country, city, timezone, currency) to provide location-specific financial advice. Use this when you need to tailor responses based on location (e.g., tax advice, currency, local regulations, time-sensitive information).',
+          description: 'Get the user\'s precise location using browser GPS/WiFi (country, city, timezone, currency) to provide location-specific financial advice. This uses browser geolocation API for maximum accuracy. Use this when you need location context (tax advice, currency, local regulations, time-sensitive information). Location is automatically cached from browser.',
           parameters: z.object({}),
           execute: async () => {
             try {
-              logger.info('TOOL_LOCATION', 'Getting user location');
+              logger.info('TOOL_LOCATION', 'Getting cached location from session');
               
-              // Call our location API
-              const locationResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/location`, {
-                headers: {
-                  'x-forwarded-for': req.headers.get('x-forwarded-for') || '',
-                  'x-real-ip': req.headers.get('x-real-ip') || '',
-                }
-              });
+              // Location should be provided by client in headers
+              const locationHeader = req.headers.get('x-client-location');
               
-              const locationData = await locationResponse.json();
+              if (locationHeader) {
+                const location = JSON.parse(locationHeader);
+                logger.info('TOOL_LOCATION_SUCCESS', 'Location retrieved from client', {
+                  country: location.country,
+                  city: location.city,
+                  source: location.source
+                });
+                
+                return {
+                  success: true,
+                  location: location
+                };
+              }
               
-              logger.info('TOOL_LOCATION_RESULT', 'Location retrieved', {
-                country: locationData.location?.country,
-                city: locationData.location?.city
-              });
-              
+              // If no location in headers, request it
+              logger.warn('TOOL_LOCATION_NO_CACHE', 'No cached location available');
               return {
-                success: true,
-                location: locationData.location
+                success: false,
+                requiresLocation: true,
+                message: 'Location not available. Please enable location access for accurate financial advice.'
               };
             } catch (error) {
               logger.error('TOOL_LOCATION_ERROR', 'Failed to get location', error);
               return {
                 success: false,
-                message: 'Could not determine user location',
-                location: {
-                  country: 'Unknown',
-                  city: 'Unknown',
-                  timezone: 'UTC',
-                  currency: 'USD'
-                }
+                message: 'Could not determine user location'
               };
             }
           },

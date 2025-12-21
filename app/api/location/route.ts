@@ -4,140 +4,70 @@ import { logger } from '@/lib/logger';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/location - Get user's approximate location
- * Uses Vercel's geolocation headers (most accurate) with IPinfo.io as fallback
- * This is called by the LLM when it needs location context
+ * POST /api/location - Get location details from client-provided coordinates
+ * Client sends coordinates from browser Geolocation API
+ * We reverse geocode to get city/country and add currency/language info
  */
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    logger.info('LOCATION_REQUEST', 'LLM requesting user location');
+    const body = await req.json();
+    const { latitude, longitude, accuracy } = body;
     
-    // PRIORITY 1: Use Vercel's geolocation headers (most accurate - bypasses edge routing)
-    const vercelCountry = req.headers.get('x-vercel-ip-country');
-    const vercelCity = req.headers.get('x-vercel-ip-city');
-    const vercelRegion = req.headers.get('x-vercel-ip-region');
-    const vercelTimezone = req.headers.get('x-vercel-ip-timezone');
-    const vercelLatitude = req.headers.get('x-vercel-ip-latitude');
-    const vercelLongitude = req.headers.get('x-vercel-ip-longitude');
-    
-    logger.debug('LOCATION_VERCEL_HEADERS', 'Vercel geolocation headers', {
-      country: vercelCountry,
-      city: vercelCity,
-      region: vercelRegion,
-      timezone: vercelTimezone
-    });
-    
-    // If Vercel headers are available, use them (they contain the real user location)
-    if (vercelCountry && vercelCity) {
-      logger.info('LOCATION_SUCCESS_VERCEL', 'Using Vercel geolocation headers', {
-        country: vercelCountry,
-        city: vercelCity,
-        timezone: vercelTimezone
-      });
-      
-      return NextResponse.json({
-        success: true,
-        location: {
-          country: getCountryName(vercelCountry) || vercelCountry,
-          countryCode: vercelCountry,
-          city: vercelCity,
-          region: vercelRegion || 'Unknown',
-          timezone: vercelTimezone || 'UTC',
-          currency: getCurrencyByCountry(vercelCountry),
-          language: getLanguageByCountry(vercelCountry),
-          latitude: vercelLatitude ? parseFloat(vercelLatitude) : undefined,
-          longitude: vercelLongitude ? parseFloat(vercelLongitude) : undefined,
-          source: 'vercel-headers'
-        }
-      });
-    }
-    
-    // PRIORITY 2: Fallback to IPinfo.io if Vercel headers not available
-    logger.warn('LOCATION_NO_VERCEL_HEADERS', 'Vercel headers not available, falling back to IPinfo.io');
-    
-    const ipinfoToken = process.env.IPINFO_API_TOKEN;
-    if (!ipinfoToken) {
-      logger.error('LOCATION_ERROR', 'IPINFO_API_TOKEN not configured');
+    if (!latitude || !longitude) {
       return NextResponse.json({
         success: false,
-        error: 'Location service not configured. Please add IPINFO_API_TOKEN to environment variables.'
-      }, { status: 500 });
+        error: 'Latitude and longitude required'
+      }, { status: 400 });
     }
     
-    // Extract IP from headers
-    const forwarded = req.headers.get('x-forwarded-for');
-    const realIp = req.headers.get('x-real-ip');
-    
-    let ip = 'unknown';
-    if (forwarded) {
-      ip = forwarded.split(',')[0].trim();
-    } else if (realIp) {
-      ip = realIp;
-    }
-    
-    logger.info('LOCATION_IP_EXTRACTED', `Extracted IP: ${ip}`, { 
-      source: forwarded ? 'x-forwarded-for' : realIp ? 'x-real-ip' : 'none'
+    logger.info('LOCATION_REQUEST', 'Reverse geocoding client coordinates', {
+      latitude,
+      longitude,
+      accuracy
     });
     
-    // For localhost/development, return a note
-    if (ip === 'unknown' || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-      logger.info('LOCATION_LOCALHOST', 'Localhost detected');
-      return NextResponse.json({
-        success: true,
-        location: {
-          country: 'Unknown',
-          city: 'Unknown',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          currency: 'USD',
-          language: 'en',
-          source: 'localhost',
-          note: 'Location detection not available in development mode'
+    // Use Nominatim (OpenStreetMap) for reverse geocoding - free, no API key
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'OnlyFin-App/1.0'
         }
-      });
-    }
-    
-    // Use IPinfo.io with API token
-    const ipinfoUrl = `https://ipinfo.io/${ip}/json?token=${ipinfoToken}`;
-    
-    logger.debug('LOCATION_IPINFO', 'Fetching from IPinfo.io', { ip });
-    
-    const geoResponse = await fetch(ipinfoUrl, {
-      headers: {
-        'User-Agent': 'OnlyFin-Bot/1.0',
-        'Accept': 'application/json'
       }
-    });
-    
-    if (!geoResponse.ok) {
-      const errorText = await geoResponse.text();
-      logger.error('LOCATION_IPINFO_ERROR', `IPinfo API error: ${geoResponse.status}`, { error: errorText });
-      throw new Error(`IPinfo API error: ${geoResponse.status} - ${errorText}`);
+    );
+
+    if (!response.ok) {
+      throw new Error(`Nominatim API error: ${response.status}`);
     }
+
+    const data = await response.json();
     
-    const geoData = await geoResponse.json();
+    const city = data.address?.city || data.address?.town || data.address?.village || 'Unknown';
+    const country = data.address?.country || 'Unknown';
+    const countryCode = data.address?.country_code?.toUpperCase() || 'XX';
+    const state = data.address?.state || 'Unknown';
     
-    logger.info('LOCATION_SUCCESS_IPINFO', 'Location retrieved from IPinfo.io', {
-      country: geoData.country,
-      city: geoData.city,
-      region: geoData.region,
-      timezone: geoData.timezone,
-      ip: ip
+    logger.info('LOCATION_SUCCESS', 'Location retrieved from browser geolocation', {
+      city,
+      country,
+      countryCode,
+      state
     });
     
     return NextResponse.json({
       success: true,
       location: {
-        country: getCountryName(geoData.country) || 'Unknown',
-        countryCode: geoData.country || 'XX',
-        city: geoData.city || 'Unknown',
-        region: geoData.region || 'Unknown',
-        timezone: geoData.timezone || 'UTC',
-        currency: getCurrencyByCountry(geoData.country),
-        language: getLanguageByCountry(geoData.country),
-        latitude: geoData.loc ? parseFloat(geoData.loc.split(',')[0]) : undefined,
-        longitude: geoData.loc ? parseFloat(geoData.loc.split(',')[1]) : undefined,
-        source: 'ipinfo-api',
-        ip: ip
+        country: country,
+        countryCode: countryCode,
+        city: city,
+        region: state,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        currency: getCurrencyByCountry(countryCode),
+        language: getLanguageByCountry(countryCode),
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+        source: 'browser-geolocation'
       }
     });
   } catch (error: any) {
