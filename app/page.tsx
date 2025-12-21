@@ -8,7 +8,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import FileUpload from '@/components/FileUpload';
 import KBManager from '@/components/KBManager';
 import { getRandomPresetQuestions, type PresetQuestion } from '@/lib/preset-questions';
-import { getCompleteClientLocation, type CompleteLocation } from '@/lib/client-location';
+import { getCompleteClientLocation, getCachedLocation, type CompleteLocation } from '@/lib/client-location';
 
 const CPS = 70; // characters per second (balanced speed for readability)
 
@@ -121,7 +121,7 @@ export default function Chat() {
     return () => clearTimeout(timeoutId);
   }, []);
   
-  // Auto-open/close sidebar on page load with welcome toast
+  // Auto-open/close sidebar on page load with welcome toast, then request location
   useEffect(() => {
     // Wait 1 second, then open
     const openTimer = setTimeout(() => {
@@ -130,24 +130,64 @@ export default function Chat() {
       // Show welcome toast
       setToast({ message: 'Upload your documents to K-Base for my reference.', type: 'success' });
       
-      // Toast stays for 5 seconds
-      const toastTimer = setTimeout(() => {
-        setToast(null);
-      }, 5000);
-      
-      // Sidebar stays open for 3.5 seconds, then close
+      // Both toast and sidebar stay for 3.5 seconds
       const closeTimer = setTimeout(() => {
-        setKbExpanded(false);
+        setToast(null); // Close toast
+        setKbExpanded(false); // Close sidebar
+        
+        // After both close, request location permission
+        setTimeout(() => {
+          requestLocationPermission();
+        }, 500);
       }, 3500);
       
       return () => {
-        clearTimeout(toastTimer);
         clearTimeout(closeTimer);
       };
     }, 1000);
     
     return () => clearTimeout(openTimer);
   }, []); // Run only once on mount
+  
+  // Request location permission with user-friendly prompt
+  const requestLocationPermission = async () => {
+    // Check if already cached
+    const cached = getCachedLocation();
+    if (cached) {
+      console.log('[LOCATION] Already have cached location');
+      setCachedLocation(cached);
+      return;
+    }
+    
+    // Show prompt toast
+    setToast({ 
+      message: 'Please allow location access for personalized financial advice (taxes, currency, regulations).', 
+      type: 'success' 
+    });
+    
+    // Request location
+    console.log('[LOCATION] Requesting location permission...');
+    const location = await getCompleteClientLocation();
+    
+    if (location) {
+      console.log('[LOCATION] Location obtained:', location.city, location.country);
+      setCachedLocation(location);
+      
+      // Show success toast
+      setToast({ 
+        message: `Location set: ${location.city}, ${location.country}`, 
+        type: 'success' 
+      });
+      setTimeout(dismissToast, 3000);
+    } else {
+      console.log('[LOCATION] User denied or location unavailable');
+      setToast({ 
+        message: 'Location access denied. You can still use the app, but some features may be limited.', 
+        type: 'error' 
+      });
+      setTimeout(dismissToast, 5000);
+    }
+  };
   
   // Typing animation state
   const finalTextById = useRef<Record<string, string>>({});
@@ -191,61 +231,7 @@ export default function Chat() {
   // Check if currently animating
   const isAnimating = animatingId !== null;
 
-  // Auto-request location when LLM needs it
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    
-    // Check if last message has a tool invocation requesting location
-    if (lastMessage?.toolInvocations) {
-      const locationTool = lastMessage.toolInvocations.find(
-        (tool: any) => tool.toolName === 'getUserLocation' && tool.state === 'result'
-      );
-      
-      if (locationTool && 'result' in locationTool && locationTool.result?.requiresLocation && !locationRequested && !cachedLocation) {
-        console.log('[LOCATION] LLM requested location, getting from browser...');
-        setLocationRequested(true);
-        
-        // Get location from browser
-        getCompleteClientLocation().then((location) => {
-          if (location) {
-            console.log('[LOCATION] Location obtained:', location.city, location.country);
-            setCachedLocation(location);
-            setLocationRequested(false);
-            
-            // Show toast
-            setToast({ 
-              message: `Location detected: ${location.city}, ${location.country}. Retrying your request...`, 
-              type: 'success' 
-            });
-            setTimeout(dismissToast, 3000);
-            
-            // Automatically retry the last user message with location context
-            // Find the last user message
-            const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user');
-            if (lastUserMessage) {
-              console.log('[LOCATION] Retrying user message with location context');
-              // Use setTimeout to ensure location is in headers
-              setTimeout(() => {
-                handleInputChange({ target: { value: lastUserMessage.content } } as any);
-                setTimeout(() => {
-                  const form = document.querySelector('form');
-                  if (form) form.requestSubmit();
-                }, 50);
-              }, 100);
-            }
-          } else {
-            console.log('[LOCATION] Failed to get location');
-            setLocationRequested(false);
-            setToast({ 
-              message: 'Could not detect location. Please enable location access.', 
-              type: 'error' 
-            });
-            setTimeout(dismissToast, 5000);
-          }
-        });
-      }
-    }
-  }, [messages, locationRequested, cachedLocation]);
+  // Location is now requested after KB intro (see requestLocationPermission function above)
 
   // Generate suggestions after assistant response completes
   useEffect(() => {
