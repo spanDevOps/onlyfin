@@ -1138,7 +1138,7 @@ export default function Chat() {
 
         {/* Input */}
         <div 
-          className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-2 relative sticky bottom-0 z-30 md:relative" 
+          className="border-gray-600/30 backdrop-blur-sm border-t px-6 py-4 pb-6 relative sticky bottom-0 z-30 md:relative" 
           style={{ backgroundColor: '#11141a' }}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
